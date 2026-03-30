@@ -1,68 +1,36 @@
 import { randomUUID } from "node:crypto";
 import type { FileAccessPolicyEntry, SantaGiftConfig } from "./index.js";
-import {
-  plistArray,
-  plistBool,
-  plistDict,
-  plistDocument,
-  plistInteger,
-  plistString,
-} from "./plist.js";
+import { PlistWriter, plistDocument } from "./plist.js";
 
 const CLIENT_MODE_MAP = { monitor: 1, lockdown: 2 } as const;
 
-// level = the indentation level of the dict tag itself
-function buildPolicyEntryDict(
-  entry: FileAccessPolicyEntry,
-  level: number,
-): string {
-  const pairs: [string, string][] = [];
-
-  // Paths array at level+1, each path dict at level+2
-  const pathDicts = entry.paths.map((p) => {
-    const pathPairs: [string, string][] = [["Path", plistString(p.path)]];
-    if (p.isPrefix !== undefined) {
-      pathPairs.push(["IsPrefix", plistBool(p.isPrefix)]);
+function writePolicyEntry(w: PlistWriter, entry: FileAccessPolicyEntry): void {
+  w.keyArray("Paths", (arr) => {
+    for (const p of entry.paths) {
+      arr.dict((d) => {
+        d.keyString("Path", p.path).optKeyBool("IsPrefix", p.isPrefix);
+      });
     }
-    return plistDict(pathPairs, level + 2);
   });
-  pairs.push(["Paths", plistArray(pathDicts, level + 1)]);
 
-  // Options dict at level+1
-  const optionPairs: [string, string][] = [];
-  if (entry.options.allowReadAccess !== undefined) {
-    optionPairs.push([
-      "AllowReadAccess",
-      plistBool(entry.options.allowReadAccess),
-    ]);
-  }
-  if (entry.options.auditOnly !== undefined) {
-    optionPairs.push(["AuditOnly", plistBool(entry.options.auditOnly)]);
-  }
-  if (entry.options.ruleType !== undefined) {
-    optionPairs.push(["RuleType", plistString(entry.options.ruleType)]);
-  }
-  pairs.push(["Options", plistDict(optionPairs, level + 1)]);
+  w.keyDict("Options", (opts) => {
+    opts
+      .optKeyBool("AllowReadAccess", entry.options.allowReadAccess)
+      .optKeyBool("AuditOnly", entry.options.auditOnly)
+      .optKeyString("RuleType", entry.options.ruleType);
+  });
 
-  // Processes array at level+1 (optional)
   if (entry.processes && entry.processes.length > 0) {
-    const procDicts = entry.processes.map((proc) => {
-      const procPairs: [string, string][] = [];
-      if (proc.signingId !== undefined) {
-        procPairs.push(["SigningID", plistString(proc.signingId)]);
+    w.keyArray("Processes", (arr) => {
+      for (const proc of entry.processes!) {
+        arr.dict((d) => {
+          d.optKeyString("SigningID", proc.signingId)
+            .optKeyString("TeamID", proc.teamId)
+            .optKeyBool("PlatformBinary", proc.platformBinary);
+        });
       }
-      if (proc.teamId !== undefined) {
-        procPairs.push(["TeamID", plistString(proc.teamId)]);
-      }
-      if (proc.platformBinary !== undefined) {
-        procPairs.push(["PlatformBinary", plistBool(proc.platformBinary)]);
-      }
-      return plistDict(procPairs, level + 2);
     });
-    pairs.push(["Processes", plistArray(procDicts, level + 1)]);
   }
-
-  return plistDict(pairs, level);
 }
 
 export function generatePlist(config: SantaGiftConfig): string {
@@ -70,54 +38,37 @@ export function generatePlist(config: SantaGiftConfig): string {
   const santaUuid = randomUUID();
   const { santaConfig } = config;
 
-  // Santa payload dict sits inside <array> inside root <dict>, so level=2
-  const santaLevel = 2;
-  const santaPairs: [string, string][] = [];
+  return plistDocument((root) => {
+    root.keyArray("PayloadContent", (arr) => {
+      arr.dict((santa) => {
+        if (santaConfig.clientMode !== undefined) {
+          santa.keyInteger("ClientMode", CLIENT_MODE_MAP[santaConfig.clientMode]);
+        }
+        santa.optKeyBool("FailClosed", santaConfig.failClosed);
 
-  if (santaConfig.clientMode !== undefined) {
-    santaPairs.push([
-      "ClientMode",
-      plistInteger(CLIENT_MODE_MAP[santaConfig.clientMode]),
-    ]);
-  }
-  if (santaConfig.failClosed !== undefined) {
-    santaPairs.push(["FailClosed", plistBool(santaConfig.failClosed)]);
-  }
-  if (
-    santaConfig.fileAccessPolicy &&
-    Object.keys(santaConfig.fileAccessPolicy).length > 0
-  ) {
-    // FileAccessPolicy dict at santaLevel+1=3, each named entry dict at santaLevel+2=4
-    const policyPairs: [string, string][] = Object.entries(
-      santaConfig.fileAccessPolicy,
-    ).map(([k, v]) => [k, buildPolicyEntryDict(v, santaLevel + 2)]);
-    santaPairs.push([
-      "FileAccessPolicy",
-      plistDict(policyPairs, santaLevel + 1),
-    ]);
-  }
+        if (santaConfig.fileAccessPolicy && Object.keys(santaConfig.fileAccessPolicy).length > 0) {
+          santa.keyDict("FileAccessPolicy", (policy) => {
+            for (const [k, v] of Object.entries(santaConfig.fileAccessPolicy!)) {
+              policy.keyDict(k, (entry) => writePolicyEntry(entry, v));
+            }
+          });
+        }
 
-  santaPairs.push(["PayloadDisplayName", plistString("Santa")]);
-  santaPairs.push(["PayloadType", plistString("com.northpolesec.santa")]);
-  santaPairs.push(["PayloadVersion", plistInteger(1)]);
-  santaPairs.push(["PayloadUUID", plistString(santaUuid)]);
-  santaPairs.push([
-    "PayloadIdentifier",
-    plistString(`com.northpolesec.santa.${santaUuid}`),
-  ]);
+        santa
+          .keyString("PayloadDisplayName", "Santa")
+          .keyString("PayloadType", "com.northpolesec.santa")
+          .keyInteger("PayloadVersion", 1)
+          .keyString("PayloadUUID", santaUuid)
+          .keyString("PayloadIdentifier", `com.northpolesec.santa.${santaUuid}`);
+      });
+    });
 
-  const santaDict = plistDict(santaPairs, santaLevel);
-
-  // Root envelope dict at level=0; PayloadContent array at level=1
-  const outerPairs: [string, string][] = [
-    ["PayloadContent", plistArray([santaDict], 1)],
-    ["PayloadDisplayName", plistString("Santa")],
-    ["PayloadEnabled", plistBool(true)],
-    ["PayloadType", plistString("Configuration")],
-    ["PayloadScope", plistString("System")],
-    ["PayloadUUID", plistString(outerUuid)],
-    ["PayloadIdentifier", plistString("com.northpolesec.santa")],
-  ];
-
-  return plistDocument(plistDict(outerPairs, 0));
+    root
+      .keyString("PayloadDisplayName", "Santa")
+      .keyBool("PayloadEnabled", true)
+      .keyString("PayloadType", "Configuration")
+      .keyString("PayloadScope", "System")
+      .keyString("PayloadUUID", outerUuid)
+      .keyString("PayloadIdentifier", "com.northpolesec.santa");
+  });
 }
