@@ -28,10 +28,7 @@ async function main() {
   }
 
   const plist = generatePlist(config);
-  const outFile = resolve(
-    process.cwd(),
-    config.generationOptions.outFile ?? "santa.mobileconfig",
-  );
+  const outFile = resolve(process.cwd(), config.generationOptions.outFile ?? "santa.mobileconfig");
 
   writeFileSync(outFile, plist, "utf-8");
   console.log(`Written to ${outFile}`);

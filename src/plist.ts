@@ -91,6 +91,25 @@ export class PlistWriter {
     return this;
   }
 
+  optKeyInteger(key: string, value: number | undefined): this {
+    if (value !== undefined) this.keyInteger(key, value);
+    return this;
+  }
+
+  data(value: string): this {
+    this.w(`<data>${value}</data>`);
+    return this;
+  }
+
+  keyData(key: string, value: string): this {
+    return this.key(key).data(value);
+  }
+
+  optKeyData(key: string, value: string | undefined): this {
+    if (value !== undefined) this.keyData(key, value);
+    return this;
+  }
+
   toString(): string {
     return this.lines.join("\n");
   }
