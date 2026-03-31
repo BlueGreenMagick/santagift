@@ -52,7 +52,37 @@ export class PlistWriter {
   }
 
   integer(value: number): this {
-    this.w(`<integer>${value}</integer>`);
+    if (!Number.isFinite(value)) {
+      throw new Error("Invalid plist integer");
+    }
+
+    let integerValue = value;
+    if (!Number.isInteger(value)) {
+      integerValue = Math.round(value);
+      console.warn(`Non-integer plist value ${value} rounded to ${integerValue}`);
+    }
+
+    this.w(`<integer>${integerValue}</integer>`);
+    return this;
+  }
+
+  real(value: number): this {
+    if (Number.isNaN(value)) {
+      this.w("<real>nan</real>");
+      return this;
+    }
+
+    if (value === Number.POSITIVE_INFINITY) {
+      this.w("<real>inf</real>");
+      return this;
+    }
+
+    if (value === Number.NEGATIVE_INFINITY) {
+      this.w("<real>-inf</real>");
+      return this;
+    }
+
+    this.w(`<real>${value}</real>`);
     return this;
   }
 
@@ -77,6 +107,10 @@ export class PlistWriter {
 
   keyInteger(key: string, value: number): this {
     return this.key(key).integer(value);
+  }
+
+  keyReal(key: string, value: number): this {
+    return this.key(key).real(value);
   }
 
   keyBool(key: string, value: boolean): this {
@@ -107,6 +141,11 @@ export class PlistWriter {
 
   optKeyInteger(key: string, value: number | undefined): this {
     if (value !== undefined) this.keyInteger(key, value);
+    return this;
+  }
+
+  optKeyReal(key: string, value: number | undefined): this {
+    if (value !== undefined) this.keyReal(key, value);
     return this;
   }
 

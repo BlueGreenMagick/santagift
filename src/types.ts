@@ -97,6 +97,19 @@ export class PlistData {
   }
 }
 
+/** Explicit wrapper for plist `<real>` values. */
+export class PlistReal {
+  private constructor(private readonly numericValue: number) {}
+
+  static fromNumber(value: number): PlistReal {
+    return new PlistReal(value);
+  }
+
+  toNumber(): number {
+    return this.numericValue;
+  }
+}
+
 /** A static set of rules to always apply to the host. */
 export interface StaticRule {
   RuleType: RuleType;

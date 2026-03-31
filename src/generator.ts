@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { SantaGiftConfig } from "./index.js";
 import { type PlistWriter, plistDocument } from "./plist.js";
-import { PlistData } from "./types.js";
+import { PlistData, PlistReal } from "./types.js";
 
-type PlistPrimitive = string | number | boolean | Date | PlistData;
+type PlistPrimitive = string | number | boolean | Date | PlistData | PlistReal;
 type PlistValue = PlistPrimitive | PlistObject | PlistValue[];
 interface PlistObject {
   [key: string]: PlistValue | undefined;
@@ -15,7 +15,8 @@ function isPlainObject(value: unknown): value is PlistObject {
     value !== null &&
     !Array.isArray(value) &&
     !(value instanceof Date) &&
-    !(value instanceof PlistData)
+    !(value instanceof PlistData) &&
+    !(value instanceof PlistReal)
   );
 }
 
@@ -52,6 +53,11 @@ function writeValue(writer: PlistWriter, value: PlistValue): void {
 
   if (value instanceof PlistData) {
     writer.data(value.toBase64());
+    return;
+  }
+
+  if (value instanceof PlistReal) {
+    writer.real(value.toNumber());
     return;
   }
 

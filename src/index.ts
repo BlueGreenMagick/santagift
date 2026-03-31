@@ -14,7 +14,7 @@ export type {
   SyncProxyConfig,
   TelemetryEvent,
 } from "./types.js";
-export { ClientMode, PlistData } from "./types.js";
+export { ClientMode, PlistData, PlistReal } from "./types.js";
 
 import type { GenerationOptions, SantaConfig, SantaGiftConfig } from "./types.js";
 
