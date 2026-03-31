@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { SantaGiftConfig } from "./index.js";
-import { type PlistWriter, plistDocument } from "./plist.js";
-import { PlistData, PlistReal } from "./types.js";
+import { PlistData, PlistReal, type PlistWriter, plistDocument } from "./plist.js";
 
 type PlistPrimitive = string | number | boolean | Date | PlistData | PlistReal;
 type PlistValue = PlistPrimitive | PlistObject | PlistValue[];

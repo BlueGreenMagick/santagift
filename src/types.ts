@@ -1,3 +1,5 @@
+import type { PlistData } from "./plist.js";
+
 /** Options controlling generated output. */
 export interface GenerationOptions {
   /** Output path for the generated plist. */
@@ -65,62 +67,6 @@ export enum ClientMode {
 }
 
 /** Explicit wrapper for plist `<data>` values. */
-export class PlistData {
-  private constructor(private readonly base64Value: string) {}
-
-  static fromBase64(base64: string): PlistData {
-    const normalized = base64.replace(/\s+/g, "");
-    const bytes = Buffer.from(normalized, "base64");
-
-    if (bytes.length === 0 && normalized !== "") {
-      throw new Error("Invalid base64 data");
-    }
-
-    if (bytes.toString("base64") !== normalized) {
-      throw new Error("Invalid base64 data");
-    }
-
-    return new PlistData(normalized);
-  }
-
-  static fromBytes(bytes: ArrayBuffer | ArrayBufferView): PlistData {
-    const view =
-      bytes instanceof ArrayBuffer
-        ? new Uint8Array(bytes)
-        : new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-
-    return new PlistData(Buffer.from(view).toString("base64"));
-  }
-
-  toBase64(): string {
-    return this.base64Value;
-  }
-
-  toString(): string {
-    return this.base64Value;
-  }
-}
-
-/** Explicit wrapper for plist `<real>` values. */
-export class PlistReal {
-  private constructor(private readonly numericValue: number) {}
-
-  static fromNumber(value: number): PlistReal {
-    return new PlistReal(value);
-  }
-
-  toNumber(): number {
-    return this.numericValue;
-  }
-
-  toString(): string {
-    if (Number.isNaN(this.numericValue)) return "nan";
-    if (this.numericValue === Number.POSITIVE_INFINITY) return "inf";
-    if (this.numericValue === Number.NEGATIVE_INFINITY) return "-inf";
-    return `${this.numericValue}`;
-  }
-}
-
 /** A static set of rules to always apply to the host. */
 export interface StaticRule {
   RuleType: RuleType;
