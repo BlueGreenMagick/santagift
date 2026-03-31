@@ -95,6 +95,10 @@ export class PlistData {
   toBase64(): string {
     return this.base64Value;
   }
+
+  toString(): string {
+    return this.base64Value;
+  }
 }
 
 /** Explicit wrapper for plist `<real>` values. */
@@ -107,6 +111,13 @@ export class PlistReal {
 
   toNumber(): number {
     return this.numericValue;
+  }
+
+  toString(): string {
+    if (Number.isNaN(this.numericValue)) return "nan";
+    if (this.numericValue === Number.POSITIVE_INFINITY) return "inf";
+    if (this.numericValue === Number.NEGATIVE_INFINITY) return "-inf";
+    return `${this.numericValue}`;
   }
 }
 

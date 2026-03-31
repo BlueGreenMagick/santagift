@@ -8,15 +8,52 @@ function escapeXml(s: string): string {
 
 export class PlistWriter {
   private lines: string[] = [];
+  private lastKey: string | null = null;
 
-  constructor(private level = 0) {}
+  constructor(
+    private level = 0,
+    private path = "<root>",
+    private arrayIndex: number | null = null,
+  ) {}
 
   private w(line: string): void {
     this.lines.push(`${ind(this.level)}${line}`);
   }
 
+  private appendPathSegment(segment: string): string {
+    return this.path === "<root>" ? segment : `${this.path}.${segment}`;
+  }
+
+  private appendArrayIndex(index: number): string {
+    return `${this.path}[${index}]`;
+  }
+
+  private currentValuePath(): string {
+    if (this.arrayIndex !== null) return this.appendArrayIndex(this.arrayIndex);
+    if (this.lastKey !== null) return this.appendPathSegment(this.lastKey);
+    return this.path;
+  }
+
+  private advanceValueCursor(): void {
+    if (this.arrayIndex !== null) {
+      this.arrayIndex += 1;
+      return;
+    }
+
+    if (this.lastKey !== null) {
+      this.lastKey = null;
+    }
+  }
+
+  private invalidValue(plistType: string, value: unknown, detail: string): never {
+    throw new Error(
+      `Invalid plist <${plistType}> at ${this.currentValuePath()}. Received: ${value}. ${detail}`,
+    );
+  }
+
   dict(fn: (w: PlistWriter) => void): this {
-    const inner = new PlistWriter(this.level + 1);
+    const inner = new PlistWriter(this.level + 1, this.currentValuePath());
+    this.advanceValueCursor();
     fn(inner);
     if (inner.lines.length === 0) {
       this.w("<dict/>");
@@ -29,7 +66,8 @@ export class PlistWriter {
   }
 
   array(fn: (w: PlistWriter) => void): this {
-    const inner = new PlistWriter(this.level + 1);
+    const inner = new PlistWriter(this.level + 1, this.currentValuePath(), 0);
+    this.advanceValueCursor();
     fn(inner);
     if (inner.lines.length === 0) {
       this.w("<array/>");
@@ -42,31 +80,37 @@ export class PlistWriter {
   }
 
   key(k: string): this {
+    this.lastKey = k;
     this.w(`<key>${escapeXml(k)}</key>`);
     return this;
   }
 
   string(value: string): this {
+    this.advanceValueCursor();
     this.w(`<string>${escapeXml(value)}</string>`);
     return this;
   }
 
   integer(value: number): this {
     if (!Number.isFinite(value)) {
-      throw new Error("Invalid plist integer");
+      this.invalidValue("integer", value, "Only integers are supported.");
     }
 
     if (!Number.isInteger(value)) {
-      throw new Error(
-        "Only integers are supported in plist <integer>. Use PlistReal for floating-point values instead.",
+      this.invalidValue(
+        "integer",
+        value,
+        "Only integers are supported. Use PlistReal for floating-point values instead.",
       );
     }
 
+    this.advanceValueCursor();
     this.w(`<integer>${value}</integer>`);
     return this;
   }
 
   real(value: number): this {
+    this.advanceValueCursor();
     if (Number.isNaN(value)) {
       this.w("<real>nan</real>");
       return this;
@@ -88,15 +132,17 @@ export class PlistWriter {
 
   date(value: Date): this {
     if (Number.isNaN(value.getTime())) {
-      throw new Error("Invalid plist date");
+      this.invalidValue("date", value, "Only valid Date instances are supported.");
     }
 
+    this.advanceValueCursor();
     // ISO 8601 formatted string
     this.w(`<date>${value.toISOString().replace(/\.\d{3}Z$/, "Z")}</date>`);
     return this;
   }
 
   bool(value: boolean): this {
+    this.advanceValueCursor();
     this.w(value ? "<true/>" : "<false/>");
     return this;
   }
@@ -155,6 +201,7 @@ export class PlistWriter {
   }
 
   data(value: string): this {
+    this.advanceValueCursor();
     this.w(`<data>${value}</data>`);
     return this;
   }

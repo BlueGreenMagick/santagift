@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { generatePlist } from "../src/generator.js";
 import type { SantaGiftConfig } from "../src/index.js";
-import { ClientMode, PlistReal } from "../src/index.js";
+import { ClientMode, PlistData, PlistReal } from "../src/index.js";
 import { PlistWriter } from "../src/plist.js";
 
 process.env.TEST_SANTAGIFT_UUID = "00000000-0000-0000-0000-000000000000";
@@ -36,6 +36,14 @@ it("serializes PlistReal values as plist reals", () => {
   expect(result).toContain("<real>3.14</real>");
 });
 
+it("formats plist wrapper values via toString", () => {
+  expect(`${PlistData.fromBase64("QUJD")}`).toBe("QUJD");
+  expect(`${PlistReal.fromNumber(3.14)}`).toBe("3.14");
+  expect(`${PlistReal.fromNumber(Number.POSITIVE_INFINITY)}`).toBe("inf");
+  expect(`${PlistReal.fromNumber(Number.NEGATIVE_INFINITY)}`).toBe("-inf");
+  expect(`${PlistReal.fromNumber(Number.NaN)}`).toBe("nan");
+});
+
 it("serializes special plist real values", () => {
   const writer = new PlistWriter();
 
@@ -51,7 +59,14 @@ it("serializes special plist real values", () => {
 it("rejects non-integer plist integers with guidance", () => {
   const writer = new PlistWriter();
 
-  expect(() => writer.integer(3.6)).toThrowError();
+  try {
+    writer.integer(3.6);
+    throw new Error("Expected integer serialization to fail");
+  } catch (error) {
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("3.6");
+    expect((error as Error).message).toContain("<root>");
+  }
 });
 
 it("rejects non-finite plist integers", () => {
@@ -59,4 +74,22 @@ it("rejects non-finite plist integers", () => {
 
   expect(() => writer.integer(Number.NaN)).toThrowError();
   expect(() => writer.integer(Number.POSITIVE_INFINITY)).toThrowError();
+});
+
+it("includes the nested config path in integer serialization errors", () => {
+  const config = {
+    generationOptions: {},
+    santaConfig: {
+      TestItems: [{ BadInteger: 3.6 }],
+    },
+  } as unknown as SantaGiftConfig;
+
+  try {
+    generatePlist(config);
+    throw new Error("Expected plist generation to fail");
+  } catch (error) {
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("TestItems[0].BadInteger");
+    expect((error as Error).message).toContain("3.6");
+  }
 });
