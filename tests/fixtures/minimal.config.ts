@@ -1,3 +1,3 @@
-import { defineConfig } from "santagift";
+import { ClientMode, defineConfig } from "santagift";
 
-export default defineConfig({}, { clientMode: "monitor" });
+export default defineConfig({}, { ClientMode: ClientMode.Monitor });

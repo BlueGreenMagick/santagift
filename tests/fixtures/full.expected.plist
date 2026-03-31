@@ -17,6 +17,29 @@
 			<string>This software is not allowed on this machine.</string>
 			<key>BrandingCompanyLogo</key>
 			<string>file:///Library/Application%20Support/MyOrg/logo.png</string>
+			<key>StaticRules</key>
+			<array>
+				<dict>
+					<key>RuleType</key>
+					<string>TEAMID</string>
+					<key>Policy</key>
+					<string>ALLOWLIST</string>
+					<key>Identifier</key>
+					<string>EQHXZ8M8AV</string>
+					<key>Comment</key>
+					<string>Allow Apple software</string>
+				</dict>
+				<dict>
+					<key>RuleType</key>
+					<string>BINARY</string>
+					<key>Policy</key>
+					<string>BLOCKLIST</string>
+					<key>Identifier</key>
+					<string>abc123def456</string>
+					<key>CustomMsg</key>
+					<string>Blocked binary</string>
+				</dict>
+			</array>
 			<key>FileAccessPolicy</key>
 			<dict>
 				<key>Version</key>
@@ -67,29 +90,6 @@
 			<string>^/usr/local/</string>
 			<key>EnableTransitiveRules</key>
 			<true/>
-			<key>StaticRules</key>
-			<array>
-				<dict>
-					<key>RuleType</key>
-					<string>TEAMID</string>
-					<key>Policy</key>
-					<string>ALLOWLIST</string>
-					<key>Identifier</key>
-					<string>EQHXZ8M8AV</string>
-					<key>Comment</key>
-					<string>Allow Apple software</string>
-				</dict>
-				<dict>
-					<key>RuleType</key>
-					<string>BINARY</string>
-					<key>Policy</key>
-					<string>BLOCKLIST</string>
-					<key>Identifier</key>
-					<string>abc123def456</string>
-					<key>CustomMsg</key>
-					<string>Blocked binary</string>
-				</dict>
-			</array>
 			<key>EventLogType</key>
 			<string>file</string>
 			<key>EventLogPath</key>

@@ -1,44 +1,80 @@
 import { randomUUID } from "node:crypto";
-import type { FileAccessPolicyEntry, SantaGiftConfig } from "./index.js";
+import type { SantaGiftConfig } from "./index.js";
 import { type PlistWriter, plistDocument } from "./plist.js";
+import { PlistData } from "./types.js";
 
-const CLIENT_MODE_MAP = { monitor: 1, lockdown: 2, standalone: 3 } as const;
+type PlistPrimitive = string | number | boolean | PlistData;
+type PlistValue = PlistPrimitive | PlistObject | PlistValue[];
+interface PlistObject {
+  [key: string]: PlistValue | undefined;
+}
 
-function writePolicyEntry(w: PlistWriter, entry: FileAccessPolicyEntry): void {
-  w.keyArray("Paths", (arr) => {
-    for (const p of entry.paths) {
-      arr.dict((d) => {
-        d.keyString("Path", p.path).optKeyBool("IsPrefix", p.isPrefix);
-      });
-    }
-  });
+function isPlainObject(value: unknown): value is PlistObject {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof PlistData)
+  );
+}
 
-  w.keyDict("Options", (opts) => {
-    opts
-      .optKeyString("RuleType", entry.options.ruleType)
-      .optKeyBool("AllowReadAccess", entry.options.allowReadAccess)
-      .optKeyBool("AuditOnly", entry.options.auditOnly)
-      .optKeyString("EventDetailURL", entry.options.eventDetailURL)
-      .optKeyString("EventDetailText", entry.options.eventDetailText)
-      .optKeyString("BlockMessage", entry.options.blockMessage)
-      .optKeyBool("EnableSilentMode", entry.options.enableSilentMode)
-      .optKeyBool("EnableSilentTTYMode", entry.options.enableSilentTTYMode);
-  });
+function hasSerializableContent(
+  value: PlistValue | undefined,
+): value is PlistValue {
+  if (value === undefined) return false;
+  if (Array.isArray(value))
+    return value.some((entry) => hasSerializableContent(entry));
+  if (isPlainObject(value)) {
+    return Object.values(value).some((entry) => hasSerializableContent(entry));
+  }
+  return true;
+}
 
-  if (entry.processes && entry.processes.length > 0) {
-    const processes = entry.processes;
-    w.keyArray("Processes", (arr) => {
-      for (const proc of processes) {
-        arr.dict((d) => {
-          d.optKeyString("SigningID", proc.signingId)
-            .optKeyString("TeamID", proc.teamId)
-            .optKeyBool("PlatformBinary", proc.platformBinary)
-            .optKeyString("CDHash", proc.cdHash)
-            .optKeyString("CertificateSha256", proc.certificateSha256)
-            .optKeyString("BinaryPath", proc.binaryPath);
-        });
+function writeValue(writer: PlistWriter, value: PlistValue): void {
+  if (Array.isArray(value)) {
+    writer.array((arr) => {
+      for (const entry of value) {
+        if (!hasSerializableContent(entry)) continue;
+        writeValue(arr, entry);
       }
     });
+    return;
+  }
+
+  if (isPlainObject(value)) {
+    writer.dict((dict) => {
+      for (const [entryKey, entryValue] of Object.entries(value)) {
+        if (!hasSerializableContent(entryValue)) continue;
+        dict.key(entryKey);
+        writeValue(dict, entryValue);
+      }
+    });
+    return;
+  }
+
+  if (value instanceof PlistData) {
+    writer.data(value.toBase64());
+    return;
+  }
+
+  if (typeof value === "string") {
+    writer.string(value);
+    return;
+  }
+
+  if (typeof value === "number") {
+    writer.integer(value);
+    return;
+  }
+
+  writer.bool(value);
+}
+
+function writeConfig(writer: PlistWriter, config: PlistObject): void {
+  for (const [key, value] of Object.entries(config)) {
+    if (!hasSerializableContent(value)) continue;
+    writer.key(key);
+    writeValue(writer, value);
   }
 }
 
@@ -50,251 +86,17 @@ export function generatePlist(config: SantaGiftConfig): string {
   return plistDocument((root) => {
     root.keyArray("PayloadContent", (arr) => {
       arr.dict((santa) => {
-        // General
-        if (santaConfig.clientMode !== undefined) {
-          santa.keyInteger("ClientMode", CLIENT_MODE_MAP[santaConfig.clientMode]);
-        }
-        santa
-          .optKeyBool("FailClosed", santaConfig.failClosed)
-          .optKeyBool(
-            "EnableStandalonePasswordFallback",
-            santaConfig.enableStandalonePasswordFallback,
-          )
-          .optKeyBool(
-            "IgnoreOtherEndpointSecurityClients",
-            santaConfig.ignoreOtherEndpointSecurityClients,
-          )
-          .optKeyBool("EnableStatsCollection", santaConfig.enableStatsCollection)
-          .optKeyString("StatsOrganizationID", santaConfig.statsOrganizationID);
+        writeConfig(santa, santaConfig as PlistObject);
 
-        // Sync
-        santa
-          .optKeyString("SyncBaseURL", santaConfig.syncBaseURL)
-          .optKeyBool("SyncEnableProtoTransfer", santaConfig.syncEnableProtoTransfer)
-          .optKeyBool("SyncEnableCleanSyncEventUpload", santaConfig.syncEnableCleanSyncEventUpload);
-
-        if (santaConfig.syncProxyConfiguration) {
-          const proxy = santaConfig.syncProxyConfiguration;
-          santa.keyDict("SyncProxyConfiguration", (d) => {
-            d.optKeyBool("HTTPEnable", proxy.HTTPEnable)
-              .optKeyString("HTTPProxy", proxy.HTTPProxy)
-              .optKeyInteger("HTTPPort", proxy.HTTPPort)
-              .optKeyBool("HTTPSEnable", proxy.HTTPSEnable)
-              .optKeyString("HTTPSProxy", proxy.HTTPSProxy)
-              .optKeyInteger("HTTPSPort", proxy.HTTPSPort)
-              .optKeyBool("ProxyAutoConfigEnable", proxy.ProxyAutoConfigEnable)
-              .optKeyString("ProxyAutoConfigURLString", proxy.ProxyAutoConfigURLString);
-          });
-        }
-
-        santa
-          .optKeyString("ClientAuthCertificateFile", santaConfig.clientAuthCertificateFile)
-          .optKeyString("ClientAuthCertificatePassword", santaConfig.clientAuthCertificatePassword)
-          .optKeyString("ClientAuthCertificateCN", santaConfig.clientAuthCertificateCN)
-          .optKeyString("ClientAuthCertificateIssuerCN", santaConfig.clientAuthCertificateIssuerCN)
-          .optKeyString("ServerAuthRootsFile", santaConfig.serverAuthRootsFile)
-          .optKeyData("ServerAuthRootsData", santaConfig.serverAuthRootsData)
-          .optKeyString("MachineID", santaConfig.machineID)
-          .optKeyString("MachineOwner", santaConfig.machineOwner)
-          .optKeyString("MachineOwnerPlist", santaConfig.machineOwnerPlist);
-
-        if (santaConfig.machineOwnerGroups && santaConfig.machineOwnerGroups.length > 0) {
-          const machineOwnerGroups = santaConfig.machineOwnerGroups;
-          santa.keyArray("MachineOwnerGroups", (arr) => {
-            for (const g of machineOwnerGroups) arr.string(g);
-          });
-        }
-
-        santa
-          .optKeyBool("EnableAllEventUpload", santaConfig.enableAllEventUpload)
-          .optKeyBool("DisableUnknownEventUpload", santaConfig.disableUnknownEventUpload);
-
-        // GUI
-        santa
-          .optKeyBool("EnableSilentMode", santaConfig.enableSilentMode)
-          .optKeyBool("EnableSilentTTYMode", santaConfig.enableSilentTTYMode)
-          .optKeyBool("EnableMenuItem", santaConfig.enableMenuItem)
-          .optKeyString("AboutText", santaConfig.aboutText)
-          .optKeyString("MoreInfoURL", santaConfig.moreInfoURL)
-          .optKeyString("EventDetailURL", santaConfig.eventDetailURL)
-          .optKeyString("EventDetailText", santaConfig.eventDetailText)
-          .optKeyString("FileAccessEventDetailURL", santaConfig.fileAccessEventDetailURL)
-          .optKeyString("FileAccessEventDetailText", santaConfig.fileAccessEventDetailText)
-          .optKeyString("DismissText", santaConfig.dismissText)
-          .optKeyString("UnknownBlockMessage", santaConfig.unknownBlockMessage)
-          .optKeyString("BannedBlockMessage", santaConfig.bannedBlockMessage)
-          .optKeyString("ModeNotificationMonitor", santaConfig.modeNotificationMonitor)
-          .optKeyString("ModeNotificationLockdown", santaConfig.modeNotificationLockdown)
-          .optKeyString("BannedUSBBlockMessage", santaConfig.bannedUSBBlockMessage)
-          .optKeyString("RemountUSBBlockMessage", santaConfig.remountUSBBlockMessage)
-          .optKeyString("FileAccessBlockMessage", santaConfig.fileAccessBlockMessage)
-          .optKeyBool("EnableNotificationSilences", santaConfig.enableNotificationSilences)
-          .optKeyString("BrandingCompanyName", santaConfig.brandingCompanyName)
-          .optKeyString("BrandingCompanyLogo", santaConfig.brandingCompanyLogo)
-          .optKeyString("BrandingCompanyLogoDark", santaConfig.brandingCompanyLogoDark)
-          .optKeyBool("FunFontsOnSpecificDays", santaConfig.funFontsOnSpecificDays);
-
-        // File-Access Authorization
-        if (santaConfig.fileAccessPolicy) {
-          const fap = santaConfig.fileAccessPolicy;
-          santa.keyDict("FileAccessPolicy", (policy) => {
-            policy
-              .keyString("Version", fap.version)
-              .optKeyString("EventDetailURL", fap.eventDetailURL)
-              .optKeyString("EventDetailText", fap.eventDetailText);
-
-            if (fap.watchItems && Object.keys(fap.watchItems).length > 0) {
-              const watchItemsData = fap.watchItems;
-              policy.keyDict("WatchItems", (watchItems) => {
-                for (const [k, v] of Object.entries(watchItemsData)) {
-                  watchItems.keyDict(k, (entry) => writePolicyEntry(entry, v));
-                }
-              });
-            }
-          });
-        }
-
-        santa
-          .optKeyString("FileAccessPolicyPlist", santaConfig.fileAccessPolicyPlist)
-          .optKeyInteger(
-            "FileAccessPolicyUpdateIntervalSec",
-            santaConfig.fileAccessPolicyUpdateIntervalSec,
-          )
-          .optKeyString("OverrideFileAccessAction", santaConfig.overrideFileAccessAction)
-          .optKeyInteger("FileAccessGlobalLogsPerSec", santaConfig.fileAccessGlobalLogsPerSec)
-          .optKeyInteger(
-            "FileAccessGlobalWindowSizeSec",
-            santaConfig.fileAccessGlobalWindowSizeSec,
-          );
-
-        // Rules
-        santa
-          .optKeyString("AllowedPathRegex", santaConfig.allowedPathRegex)
-          .optKeyString("BlockedPathRegex", santaConfig.blockedPathRegex)
-          .optKeyBool("EnableBadSignatureProtection", santaConfig.enableBadSignatureProtection)
-          .optKeyBool("EnablePageZeroProtection", santaConfig.enablePageZeroProtection)
-          .optKeyBool("EnableTransitiveRules", santaConfig.enableTransitiveRules);
-
-        if (santaConfig.staticRules && santaConfig.staticRules.length > 0) {
-          const staticRules = santaConfig.staticRules;
-          santa.keyArray("StaticRules", (arr) => {
-            for (const rule of staticRules) {
-              arr.dict((d) => {
-                d.keyString("RuleType", rule.ruleType)
-                  .keyString("Policy", rule.policy)
-                  .keyString("Identifier", rule.identifier)
-                  .optKeyString("CustomMsg", rule.customMsg)
-                  .optKeyString("CustomURL", rule.customURL)
-                  .optKeyString("Comment", rule.comment);
-              });
-            }
-          });
-        }
-
-        // Telemetry & Logging
-        santa
-          .optKeyString("EventLogType", santaConfig.eventLogType)
-          .optKeyString("EventLogPath", santaConfig.eventLogPath);
-
-        if (santaConfig.telemetry && santaConfig.telemetry.length > 0) {
-          const telemetry = santaConfig.telemetry;
-          santa.keyArray("Telemetry", (arr) => {
-            for (const t of telemetry) arr.string(t);
-          });
-        }
-
-        santa
-          .optKeyString("FileChangesRegex", santaConfig.fileChangesRegex)
-          .optKeyBool("EnableMachineIDDecoration", santaConfig.enableMachineIDDecoration)
-          .optKeyString("SpoolDirectory", santaConfig.spoolDirectory)
-          .optKeyInteger(
-            "SpoolDirectoryFileSizeThresholdKB",
-            santaConfig.spoolDirectoryFileSizeThresholdKB,
-          )
-          .optKeyInteger("SpoolDirectorySizeThresholdMB", santaConfig.spoolDirectorySizeThresholdMB)
-          .optKeyInteger(
-            "SpoolDirectoryEventMaxFlushTimeSec",
-            santaConfig.spoolDirectoryEventMaxFlushTimeSec,
-          );
-
-        if (
-          santaConfig.fileChangesPrefixFilters &&
-          santaConfig.fileChangesPrefixFilters.length > 0
-        ) {
-          const fileChangesPrefixFilters = santaConfig.fileChangesPrefixFilters;
-          santa.keyArray("FileChangesPrefixFilters", (arr) => {
-            for (const filter of fileChangesPrefixFilters) arr.string(filter);
-          });
-        }
-
-        if (
-          santaConfig.entitlementsPrefixFilter &&
-          santaConfig.entitlementsPrefixFilter.length > 0
-        ) {
-          const entitlementsPrefixFilter = santaConfig.entitlementsPrefixFilter;
-          santa.keyArray("EntitlementsPrefixFilter", (arr) => {
-            for (const filter of entitlementsPrefixFilter) arr.string(filter);
-          });
-        }
-
-        if (
-          santaConfig.entitlementsTeamIDFilter &&
-          santaConfig.entitlementsTeamIDFilter.length > 0
-        ) {
-          const entitlementsTeamIDFilter = santaConfig.entitlementsTeamIDFilter;
-          santa.keyArray("EntitlementsTeamIDFilter", (arr) => {
-            for (const filter of entitlementsTeamIDFilter) arr.string(filter);
-          });
-        }
-
-        if (
-          santaConfig.telemetryFilterExpressions &&
-          santaConfig.telemetryFilterExpressions.length > 0
-        ) {
-          const telemetryFilterExpressions = santaConfig.telemetryFilterExpressions;
-          santa.keyArray("TelemetryFilterExpressions", (arr) => {
-            for (const expr of telemetryFilterExpressions) arr.string(expr);
-          });
-        }
-
-        // Removable Media
-        santa.optKeyBool("BlockUSBMount", santaConfig.blockUSBMount);
-
-        if (santaConfig.remountUSBMode && santaConfig.remountUSBMode.length > 0) {
-          const remountUSBMode = santaConfig.remountUSBMode;
-          santa.keyArray("RemountUSBMode", (arr) => {
-            for (const m of remountUSBMode) arr.string(m);
-          });
-        }
-
-        santa.optKeyString("OnStartUSBOptions", santaConfig.onStartUSBOptions);
-
-        // Metrics
-        santa
-          .optKeyString("MetricFormat", santaConfig.metricFormat)
-          .optKeyString("MetricURL", santaConfig.metricURL)
-          .optKeyInteger("MetricExportInterval", santaConfig.metricExportInterval)
-          .optKeyInteger("MetricExportTimeout", santaConfig.metricExportTimeout);
-
-        if (
-          santaConfig.metricExtraLabels &&
-          Object.keys(santaConfig.metricExtraLabels).length > 0
-        ) {
-          const metricExtraLabels = santaConfig.metricExtraLabels;
-          santa.keyDict("MetricExtraLabels", (d) => {
-            for (const [k, v] of Object.entries(metricExtraLabels)) {
-              d.keyString(k, v);
-            }
-          });
-        }
-
-        // Payload metadata
         santa
           .keyString("PayloadDisplayName", "Santa")
           .keyString("PayloadType", "com.northpolesec.santa")
           .keyInteger("PayloadVersion", 1)
           .keyString("PayloadUUID", santaUuid)
-          .keyString("PayloadIdentifier", `com.northpolesec.santa.${santaUuid}`);
+          .keyString(
+            "PayloadIdentifier",
+            `com.northpolesec.santa.${santaUuid}`,
+          );
       });
     });
 

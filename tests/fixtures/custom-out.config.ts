@@ -1,3 +1,3 @@
-import { defineConfig } from "santagift";
+import { ClientMode, defineConfig } from "santagift";
 
-export default defineConfig({ outFile: "result.mobileconfig" }, { clientMode: "monitor" });
+export default defineConfig({ outFile: "result.mobileconfig" }, { ClientMode: ClientMode.Monitor });

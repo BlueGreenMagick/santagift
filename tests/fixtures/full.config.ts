@@ -1,57 +1,55 @@
-import { defineConfig } from "santagift";
+import { ClientMode, defineConfig } from "santagift";
 
 export default defineConfig(
   {},
   {
-    clientMode: "lockdown",
-    enableSilentMode: false,
-    enableSilentTTYMode: true,
-    eventDetailText: "Details",
-    unknownBlockMessage: "This software is not allowed on this machine.",
-    brandingCompanyLogo: "file:///Library/Application%20Support/MyOrg/logo.png",
-    staticRules: [
+    ClientMode: ClientMode.Lockdown,
+    EnableSilentMode: false,
+    EnableSilentTTYMode: true,
+    EventDetailText: "Details",
+    UnknownBlockMessage: "This software is not allowed on this machine.",
+    BrandingCompanyLogo: "file:///Library/Application%20Support/MyOrg/logo.png",
+    StaticRules: [
       {
-        ruleType: "TEAMID",
-        policy: "ALLOWLIST",
-        identifier: "EQHXZ8M8AV",
-        comment: "Allow Apple software",
+        RuleType: "TEAMID",
+        Policy: "ALLOWLIST",
+        Identifier: "EQHXZ8M8AV",
+        Comment: "Allow Apple software",
       },
       {
-        ruleType: "BINARY",
-        policy: "BLOCKLIST",
-        identifier: "abc123def456",
-        customMsg: "Blocked binary",
+        RuleType: "BINARY",
+        Policy: "BLOCKLIST",
+        Identifier: "abc123def456",
+        CustomMsg: "Blocked binary",
       },
     ],
-    fileAccessPolicy: {
-      version: "1.0",
-      eventDetailURL: "https://example.com/fap",
-      watchItems: {
+    FileAccessPolicy: {
+      Version: "1.0",
+      EventDetailURL: "https://example.com/fap",
+      WatchItems: {
         SensitivePaths: {
-          paths: [{ path: "/etc/passwd", isPrefix: false }, { path: "/etc/shadow" }],
-          options: {
-            ruleType: "PathsWithDeniedProcesses",
-            auditOnly: true,
+          Paths: [{ Path: "/etc/passwd", IsPrefix: false }, { Path: "/etc/shadow" }],
+          Options: {
+            RuleType: "PathsWithDeniedProcesses",
+            AuditOnly: true,
           },
-          processes: [
-            { signingId: "com.apple.bash", platformBinary: true },
-          ],
+          Processes: [{ SigningID: "com.apple.bash", PlatformBinary: true }],
         },
       },
     },
-    fileAccessPolicyUpdateIntervalSec: 600,
-    fileAccessGlobalWindowSizeSec: 15,
-    allowedPathRegex: "^/usr/local/",
-    enableTransitiveRules: true,
-    eventLogType: "file",
-    eventLogPath: "/var/db/santa/santa.log",
-    fileChangesPrefixFilters: ["/private/tmp/"],
-    blockUSBMount: true,
-    remountUSBMode: ["rdonly", "noexec"],
-    metricFormat: "rawjson",
-    metricURL: "https://metrics.example.com",
-    metricExportInterval: 60,
-    metricExportTimeout: 30,
-    metricExtraLabels: { env: "prod", region: "us-east-1" },
+    FileAccessPolicyUpdateIntervalSec: 600,
+    FileAccessGlobalWindowSizeSec: 15,
+    AllowedPathRegex: "^/usr/local/",
+    EnableTransitiveRules: true,
+    EventLogType: "file",
+    EventLogPath: "/var/db/santa/santa.log",
+    FileChangesPrefixFilters: ["/private/tmp/"],
+    BlockUSBMount: true,
+    RemountUSBMode: ["rdonly", "noexec"],
+    MetricFormat: "rawjson",
+    MetricURL: "https://metrics.example.com",
+    MetricExportInterval: 60,
+    MetricExportTimeout: 30,
+    MetricExtraLabels: { env: "prod", region: "us-east-1" },
   },
 );

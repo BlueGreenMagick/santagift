@@ -1,10 +1,9 @@
+import { execSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
 import { afterEach, beforeAll, beforeEach, expect, it } from "vitest";
-import { execSync } from "node:child_process";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const fixturesDir = fileURLToPath(new URL("./fixtures", import.meta.url));
