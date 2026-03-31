@@ -3,7 +3,7 @@ import type { SantaGiftConfig } from "./index.js";
 import { type PlistWriter, plistDocument } from "./plist.js";
 import { PlistData } from "./types.js";
 
-type PlistPrimitive = string | number | boolean | PlistData;
+type PlistPrimitive = string | number | boolean | Date | PlistData;
 type PlistValue = PlistPrimitive | PlistObject | PlistValue[];
 interface PlistObject {
   [key: string]: PlistValue | undefined;
@@ -14,16 +14,14 @@ function isPlainObject(value: unknown): value is PlistObject {
     typeof value === "object" &&
     value !== null &&
     !Array.isArray(value) &&
+    !(value instanceof Date) &&
     !(value instanceof PlistData)
   );
 }
 
-function hasSerializableContent(
-  value: PlistValue | undefined,
-): value is PlistValue {
+function hasSerializableContent(value: PlistValue | undefined): value is PlistValue {
   if (value === undefined) return false;
-  if (Array.isArray(value))
-    return value.some((entry) => hasSerializableContent(entry));
+  if (Array.isArray(value)) return value.some((entry) => hasSerializableContent(entry));
   if (isPlainObject(value)) {
     return Object.values(value).some((entry) => hasSerializableContent(entry));
   }
@@ -54,6 +52,11 @@ function writeValue(writer: PlistWriter, value: PlistValue): void {
 
   if (value instanceof PlistData) {
     writer.data(value.toBase64());
+    return;
+  }
+
+  if (value instanceof Date) {
+    writer.date(value);
     return;
   }
 
@@ -93,10 +96,7 @@ export function generatePlist(config: SantaGiftConfig): string {
           .keyString("PayloadType", "com.northpolesec.santa")
           .keyInteger("PayloadVersion", 1)
           .keyString("PayloadUUID", santaUuid)
-          .keyString(
-            "PayloadIdentifier",
-            `com.northpolesec.santa.${santaUuid}`,
-          );
+          .keyString("PayloadIdentifier", `com.northpolesec.santa.${santaUuid}`);
       });
     });
 

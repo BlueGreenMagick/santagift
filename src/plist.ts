@@ -56,6 +56,16 @@ export class PlistWriter {
     return this;
   }
 
+  date(value: Date): this {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("Invalid plist date");
+    }
+
+    // ISO 8601 formatted string
+    this.w(`<date>${value.toISOString().replace(/\.\d{3}Z$/, "Z")}</date>`);
+    return this;
+  }
+
   bool(value: boolean): this {
     this.w(value ? "<true/>" : "<false/>");
     return this;
@@ -71,6 +81,10 @@ export class PlistWriter {
 
   keyBool(key: string, value: boolean): this {
     return this.key(key).bool(value);
+  }
+
+  keyDate(key: string, value: Date): this {
+    return this.key(key).date(value);
   }
 
   keyDict(key: string, fn: (w: PlistWriter) => void): this {
@@ -93,6 +107,11 @@ export class PlistWriter {
 
   optKeyInteger(key: string, value: number | undefined): this {
     if (value !== undefined) this.keyInteger(key, value);
+    return this;
+  }
+
+  optKeyDate(key: string, value: Date | undefined): this {
+    if (value !== undefined) this.keyDate(key, value);
     return this;
   }
 
