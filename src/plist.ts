@@ -56,13 +56,13 @@ export class PlistWriter {
       throw new Error("Invalid plist integer");
     }
 
-    let integerValue = value;
     if (!Number.isInteger(value)) {
-      integerValue = Math.round(value);
-      console.warn(`Non-integer plist value ${value} rounded to ${integerValue}`);
+      throw new Error(
+        "Only integers are supported in plist <integer>. Use PlistReal for floating-point values instead.",
+      );
     }
 
-    this.w(`<integer>${integerValue}</integer>`);
+    this.w(`<integer>${value}</integer>`);
     return this;
   }
 

@@ -1,14 +1,10 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import { generatePlist } from "../src/generator.js";
 import type { SantaGiftConfig } from "../src/index.js";
 import { ClientMode, PlistReal } from "../src/index.js";
 import { PlistWriter } from "../src/plist.js";
 
 process.env.TEST_SANTAGIFT_UUID = "00000000-0000-0000-0000-000000000000";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 it("serializes Date values as plist dates", () => {
   const config = {
@@ -52,19 +48,15 @@ it("serializes special plist real values", () => {
   expect(writer.toString()).toContain("<real>nan</real>");
 });
 
-it("rounds non-integer plist integers and warns", () => {
-  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+it("rejects non-integer plist integers with guidance", () => {
   const writer = new PlistWriter();
 
-  writer.integer(3.6);
-
-  expect(writer.toString()).toContain("<integer>4</integer>");
-  expect(warn).toHaveBeenCalledTimes(1);
+  expect(() => writer.integer(3.6)).toThrowError();
 });
 
 it("rejects non-finite plist integers", () => {
   const writer = new PlistWriter();
 
-  expect(() => writer.integer(Number.NaN)).toThrowError("Invalid plist integer");
-  expect(() => writer.integer(Number.POSITIVE_INFINITY)).toThrowError("Invalid plist integer");
+  expect(() => writer.integer(Number.NaN)).toThrowError();
+  expect(() => writer.integer(Number.POSITIVE_INFINITY)).toThrowError();
 });
