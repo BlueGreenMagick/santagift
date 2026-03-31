@@ -70,7 +70,8 @@ export function generatePlist(config: SantaGiftConfig): string {
         // Sync
         santa
           .optKeyString("SyncBaseURL", santaConfig.syncBaseURL)
-          .optKeyBool("SyncEnableProtoTransfer", santaConfig.syncEnableProtoTransfer);
+          .optKeyBool("SyncEnableProtoTransfer", santaConfig.syncEnableProtoTransfer)
+          .optKeyBool("SyncEnableCleanSyncEventUpload", santaConfig.syncEnableCleanSyncEventUpload);
 
         if (santaConfig.syncProxyConfiguration) {
           const proxy = santaConfig.syncProxyConfiguration;
@@ -89,10 +90,13 @@ export function generatePlist(config: SantaGiftConfig): string {
         santa
           .optKeyString("ClientAuthCertificateFile", santaConfig.clientAuthCertificateFile)
           .optKeyString("ClientAuthCertificatePassword", santaConfig.clientAuthCertificatePassword)
+          .optKeyString("ClientAuthCertificateCN", santaConfig.clientAuthCertificateCN)
+          .optKeyString("ClientAuthCertificateIssuerCN", santaConfig.clientAuthCertificateIssuerCN)
           .optKeyString("ServerAuthRootsFile", santaConfig.serverAuthRootsFile)
           .optKeyData("ServerAuthRootsData", santaConfig.serverAuthRootsData)
           .optKeyString("MachineID", santaConfig.machineID)
-          .optKeyString("MachineOwner", santaConfig.machineOwner);
+          .optKeyString("MachineOwner", santaConfig.machineOwner)
+          .optKeyString("MachineOwnerPlist", santaConfig.machineOwnerPlist);
 
         if (santaConfig.machineOwnerGroups && santaConfig.machineOwnerGroups.length > 0) {
           const machineOwnerGroups = santaConfig.machineOwnerGroups;
@@ -101,18 +105,34 @@ export function generatePlist(config: SantaGiftConfig): string {
           });
         }
 
-        santa.optKeyBool("EnableAllEventUpload", santaConfig.enableAllEventUpload);
+        santa
+          .optKeyBool("EnableAllEventUpload", santaConfig.enableAllEventUpload)
+          .optKeyBool("DisableUnknownEventUpload", santaConfig.disableUnknownEventUpload);
 
         // GUI
         santa
           .optKeyBool("EnableSilentMode", santaConfig.enableSilentMode)
+          .optKeyBool("EnableSilentTTYMode", santaConfig.enableSilentTTYMode)
           .optKeyBool("EnableMenuItem", santaConfig.enableMenuItem)
           .optKeyString("AboutText", santaConfig.aboutText)
           .optKeyString("MoreInfoURL", santaConfig.moreInfoURL)
           .optKeyString("EventDetailURL", santaConfig.eventDetailURL)
+          .optKeyString("EventDetailText", santaConfig.eventDetailText)
+          .optKeyString("FileAccessEventDetailURL", santaConfig.fileAccessEventDetailURL)
+          .optKeyString("FileAccessEventDetailText", santaConfig.fileAccessEventDetailText)
+          .optKeyString("DismissText", santaConfig.dismissText)
           .optKeyString("UnknownBlockMessage", santaConfig.unknownBlockMessage)
+          .optKeyString("BannedBlockMessage", santaConfig.bannedBlockMessage)
+          .optKeyString("ModeNotificationMonitor", santaConfig.modeNotificationMonitor)
+          .optKeyString("ModeNotificationLockdown", santaConfig.modeNotificationLockdown)
+          .optKeyString("BannedUSBBlockMessage", santaConfig.bannedUSBBlockMessage)
+          .optKeyString("RemountUSBBlockMessage", santaConfig.remountUSBBlockMessage)
+          .optKeyString("FileAccessBlockMessage", santaConfig.fileAccessBlockMessage)
+          .optKeyBool("EnableNotificationSilences", santaConfig.enableNotificationSilences)
           .optKeyString("BrandingCompanyName", santaConfig.brandingCompanyName)
-          .optKeyString("BrandingLogo", santaConfig.brandingLogo);
+          .optKeyString("BrandingCompanyLogo", santaConfig.brandingCompanyLogo)
+          .optKeyString("BrandingCompanyLogoDark", santaConfig.brandingCompanyLogoDark)
+          .optKeyBool("FunFontsOnSpecificDays", santaConfig.funFontsOnSpecificDays);
 
         // File-Access Authorization
         if (santaConfig.fileAccessPolicy) {
@@ -136,15 +156,24 @@ export function generatePlist(config: SantaGiftConfig): string {
 
         santa
           .optKeyString("FileAccessPolicyPlist", santaConfig.fileAccessPolicyPlist)
+          .optKeyInteger(
+            "FileAccessPolicyUpdateIntervalSec",
+            santaConfig.fileAccessPolicyUpdateIntervalSec,
+          )
           .optKeyString("OverrideFileAccessAction", santaConfig.overrideFileAccessAction)
-          .optKeyInteger("FileAccessGlobalLogsPerSec", santaConfig.fileAccessGlobalLogsPerSec);
+          .optKeyInteger("FileAccessGlobalLogsPerSec", santaConfig.fileAccessGlobalLogsPerSec)
+          .optKeyInteger(
+            "FileAccessGlobalWindowSizeSec",
+            santaConfig.fileAccessGlobalWindowSizeSec,
+          );
 
         // Rules
         santa
           .optKeyString("AllowedPathRegex", santaConfig.allowedPathRegex)
           .optKeyString("BlockedPathRegex", santaConfig.blockedPathRegex)
           .optKeyBool("EnableBadSignatureProtection", santaConfig.enableBadSignatureProtection)
-          .optKeyBool("EnablePageZeroProtection", santaConfig.enablePageZeroProtection);
+          .optKeyBool("EnablePageZeroProtection", santaConfig.enablePageZeroProtection)
+          .optKeyBool("EnableTransitiveRules", santaConfig.enableTransitiveRules);
 
         if (santaConfig.staticRules && santaConfig.staticRules.length > 0) {
           const staticRules = santaConfig.staticRules;
@@ -176,7 +205,57 @@ export function generatePlist(config: SantaGiftConfig): string {
 
         santa
           .optKeyString("FileChangesRegex", santaConfig.fileChangesRegex)
-          .optKeyBool("EnableMachineIDDecoration", santaConfig.enableMachineIDDecoration);
+          .optKeyBool("EnableMachineIDDecoration", santaConfig.enableMachineIDDecoration)
+          .optKeyString("SpoolDirectory", santaConfig.spoolDirectory)
+          .optKeyInteger(
+            "SpoolDirectoryFileSizeThresholdKB",
+            santaConfig.spoolDirectoryFileSizeThresholdKB,
+          )
+          .optKeyInteger("SpoolDirectorySizeThresholdMB", santaConfig.spoolDirectorySizeThresholdMB)
+          .optKeyInteger(
+            "SpoolDirectoryEventMaxFlushTimeSec",
+            santaConfig.spoolDirectoryEventMaxFlushTimeSec,
+          );
+
+        if (
+          santaConfig.fileChangesPrefixFilters &&
+          santaConfig.fileChangesPrefixFilters.length > 0
+        ) {
+          const fileChangesPrefixFilters = santaConfig.fileChangesPrefixFilters;
+          santa.keyArray("FileChangesPrefixFilters", (arr) => {
+            for (const filter of fileChangesPrefixFilters) arr.string(filter);
+          });
+        }
+
+        if (
+          santaConfig.entitlementsPrefixFilter &&
+          santaConfig.entitlementsPrefixFilter.length > 0
+        ) {
+          const entitlementsPrefixFilter = santaConfig.entitlementsPrefixFilter;
+          santa.keyArray("EntitlementsPrefixFilter", (arr) => {
+            for (const filter of entitlementsPrefixFilter) arr.string(filter);
+          });
+        }
+
+        if (
+          santaConfig.entitlementsTeamIDFilter &&
+          santaConfig.entitlementsTeamIDFilter.length > 0
+        ) {
+          const entitlementsTeamIDFilter = santaConfig.entitlementsTeamIDFilter;
+          santa.keyArray("EntitlementsTeamIDFilter", (arr) => {
+            for (const filter of entitlementsTeamIDFilter) arr.string(filter);
+          });
+        }
+
+        if (
+          santaConfig.telemetryFilterExpressions &&
+          santaConfig.telemetryFilterExpressions.length > 0
+        ) {
+          const telemetryFilterExpressions = santaConfig.telemetryFilterExpressions;
+          santa.keyArray("TelemetryFilterExpressions", (arr) => {
+            for (const expr of telemetryFilterExpressions) arr.string(expr);
+          });
+        }
 
         // Removable Media
         santa.optKeyBool("BlockUSBMount", santaConfig.blockUSBMount);
@@ -194,7 +273,8 @@ export function generatePlist(config: SantaGiftConfig): string {
         santa
           .optKeyString("MetricFormat", santaConfig.metricFormat)
           .optKeyString("MetricURL", santaConfig.metricURL)
-          .optKeyInteger("MetricExportInterval", santaConfig.metricExportInterval);
+          .optKeyInteger("MetricExportInterval", santaConfig.metricExportInterval)
+          .optKeyInteger("MetricExportTimeout", santaConfig.metricExportTimeout);
 
         if (
           santaConfig.metricExtraLabels &&

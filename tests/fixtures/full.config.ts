@@ -5,7 +5,10 @@ export default defineConfig(
   {
     clientMode: "lockdown",
     enableSilentMode: false,
+    enableSilentTTYMode: true,
+    eventDetailText: "Details",
     unknownBlockMessage: "This software is not allowed on this machine.",
+    brandingCompanyLogo: "file:///Library/Application%20Support/MyOrg/logo.png",
     staticRules: [
       {
         ruleType: "TEAMID",
@@ -36,14 +39,19 @@ export default defineConfig(
         },
       },
     },
+    fileAccessPolicyUpdateIntervalSec: 600,
+    fileAccessGlobalWindowSizeSec: 15,
     allowedPathRegex: "^/usr/local/",
+    enableTransitiveRules: true,
     eventLogType: "file",
     eventLogPath: "/var/db/santa/santa.log",
+    fileChangesPrefixFilters: ["/private/tmp/"],
     blockUSBMount: true,
     remountUSBMode: ["rdonly", "noexec"],
     metricFormat: "rawjson",
     metricURL: "https://metrics.example.com",
     metricExportInterval: 60,
+    metricExportTimeout: 30,
     metricExtraLabels: { env: "prod", region: "us-east-1" },
   },
 );

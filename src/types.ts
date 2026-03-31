@@ -23,7 +23,36 @@ export type RemountUSBMode =
   | "nobrowse"
   | "noowners"
   | "nodev"
-  | "async";
+  | "async"
+  | "-j";
+
+export type TelemetryEvent =
+  | "Everything"
+  | "Execution"
+  | "Fork"
+  | "Exit"
+  | "Close"
+  | "Rename"
+  | "Unlink"
+  | "Link"
+  | "ExchangeData"
+  | "Disk"
+  | "Bundle"
+  | "Allowlist"
+  | "FileAccess"
+  | "CodesigningInvalidated"
+  | "LoginWindowSession"
+  | "LoginLogout"
+  | "ScreenSharing"
+  | "OpenSSH"
+  | "Authentication"
+  | "Clone"
+  | "Copyfile"
+  | "GatekeeperOverride"
+  | "LaunchItem"
+  | "TCCModification"
+  | "XProtect"
+  | "None";
 
 export type RuleType = "BINARY" | "CERTIFICATE" | "TEAMID" | "SIGNINGID" | "CDHASH";
 
@@ -210,10 +239,16 @@ export interface SantaConfig {
   syncEnableProtoTransfer?: boolean;
   /** Proxy settings used for sync communication. */
   syncProxyConfiguration?: SyncProxyConfig;
+  /** If true, events will be uploaded to the sync server even if a clean sync is requested. */
+  syncEnableCleanSyncEventUpload?: boolean;
   /** Client certificate file used for mutual TLS authentication. */
   clientAuthCertificateFile?: string;
   /** Password for the client authentication certificate file. */
   clientAuthCertificatePassword?: string;
+  /** Common Name of a certificate in the System keychain to use for sync authentication. */
+  clientAuthCertificateCN?: string;
+  /** Issuer Common Name of a certificate in the System keychain to use for sync authentication. */
+  clientAuthCertificateIssuerCN?: string;
   /** File containing root certificates used to authenticate the server. */
   serverAuthRootsFile?: string;
   /** PEM-encoded root certificates used to authenticate the server. */
@@ -222,14 +257,20 @@ export interface SantaConfig {
   machineID?: string;
   /** Machine owner value to send to the sync server. */
   machineOwner?: string;
+  /** Path to a plist containing the machine owner. */
+  machineOwnerPlist?: string;
   /** Machine owner groups to send to the sync server. */
   machineOwnerGroups?: string[];
   /** If true, upload all events rather than only the usual subset. */
   enableAllEventUpload?: boolean;
+  /** If true, unknown events will not be uploaded to the sync server. */
+  disableUnknownEventUpload?: boolean;
 
   // GUI
   /** If true, GUI notifications are suppressed. */
   enableSilentMode?: boolean;
+  /** If true, TTY notifications are suppressed. */
+  enableSilentTTYMode?: boolean;
   /** If true, the Santa menu item is shown. */
   enableMenuItem?: boolean;
   /** Text shown in the About window. */
@@ -238,8 +279,30 @@ export interface SantaConfig {
   moreInfoURL?: string;
   /** Global URL displayed when users receive block notifications. Supports variable substitution. */
   eventDetailURL?: string;
+  /** Button text associated with `eventDetailURL`. */
+  eventDetailText?: string;
+  /** Global URL displayed when users receive file-access block notifications. */
+  fileAccessEventDetailURL?: string;
+  /** Button text associated with `fileAccessEventDetailURL`. */
+  fileAccessEventDetailText?: string;
+  /** Text shown on the dismiss button in the block dialog. */
+  dismissText?: string;
   /** Message shown when an unknown binary is blocked. */
   unknownBlockMessage?: string;
+  /** Message shown when a binary is blocked by a rule without a custom message. */
+  bannedBlockMessage?: string;
+  /** Notification text displayed when entering monitor mode. */
+  modeNotificationMonitor?: string;
+  /** Notification text displayed when entering lockdown mode. */
+  modeNotificationLockdown?: string;
+  /** Message displayed when a USB device is prevented from being mounted. */
+  bannedUSBBlockMessage?: string;
+  /** Message displayed when a USB device is remounted with restricted flags. */
+  remountUSBBlockMessage?: string;
+  /** Default message shown when a file-access rule blocks access. */
+  fileAccessBlockMessage?: string;
+  /** If false, users will not be presented with an option to silence notifications. */
+  enableNotificationSilences?: boolean;
   /** Company name to display on Santa GUIs and in TTY messages. */
   brandingCompanyName?: string;
   /**
@@ -251,13 +314,25 @@ export interface SantaConfig {
    *
    * Note: HTTP/HTTPS URLs are not supported.
    */
-  brandingLogo?: string;
+  brandingCompanyLogo?: string;
+  /**
+   * A URL referencing a logo image to display on Santa UIs in dark mode.
+   *
+   * Supported URL schemes:
+   * - `file://`
+   * - `data:`
+   */
+  brandingCompanyLogoDark?: string;
+  /** If true, the Santa UI will use special images/fonts on certain holidays. */
+  funFontsOnSpecificDays?: boolean;
 
   // File-Access Authorization
   /** A complete file access configuration policy embedded in the main Santa config. */
   fileAccessPolicy?: FileAccessPolicy;
   /** Path to a file access configuration plist. Ignored if `fileAccessPolicy` is also set. */
   fileAccessPolicyPlist?: string;
+  /** Seconds between re-reading the file access policy config. */
+  fileAccessPolicyUpdateIntervalSec?: number;
   /**
    * Defines a global override policy that applies to the enforcement of all
    * FAA rules.
@@ -265,12 +340,15 @@ export interface SantaConfig {
    * Allowed values:
    * - `AUDIT_ONLY`: no access will be blocked, only logged
    * - `DISABLE`: no access will be blocked or logged
+   * - `none`: enforce policy as defined in each rule
    *
-   * Omit this property to enforce policy as defined in each rule.
+   * Omitting this property has the same effect as `none`.
    */
-  overrideFileAccessAction?: "AUDIT_ONLY" | "DISABLE";
+  overrideFileAccessAction?: "AUDIT_ONLY" | "DISABLE" | "none";
   /** Average logs per second emitted by FAA rule violations. */
   fileAccessGlobalLogsPerSec?: number;
+  /** Window size over which FAA log rate limiting is applied. */
+  fileAccessGlobalWindowSizeSec?: number;
 
   // Rules
   /** A regex to allow if the binary, certificate, or Team ID scopes did not allow or block execution. */
@@ -281,6 +359,8 @@ export interface SantaConfig {
   enableBadSignatureProtection?: boolean;
   /** If true, 32-bit binaries missing the `__PAGEZERO` segment will be blocked even in monitor mode unless explicitly allowed. */
   enablePageZeroProtection?: boolean;
+  /** If true, Santa will respect compiler rules and create allow rules for produced executables. */
+  enableTransitiveRules?: boolean;
   /** A static set of rules to always apply to the host. */
   staticRules?: StaticRule[];
 
@@ -329,11 +409,27 @@ export interface SantaConfig {
    * - `XProtect`
    * - `None`
    */
-  telemetry?: string[];
+  telemetry?: TelemetryEvent[];
   /** The regex of paths to log file changes. */
   fileChangesRegex?: string;
+  /** Array of path prefixes that should be excluded from file-change logging. */
+  fileChangesPrefixFilters?: string[];
+  /** Base directory used to save protobuf spool files. */
+  spoolDirectory?: string;
+  /** Per-file size limit in KB for files stored in the protobuf spool directory. */
+  spoolDirectoryFileSizeThresholdKB?: number;
+  /** Total combined size limit in MB of all protobuf spool directory files. */
+  spoolDirectorySizeThresholdMB?: number;
+  /** Max seconds to buffer protobuf events before flushing to disk. */
+  spoolDirectoryEventMaxFlushTimeSec?: number;
   /** If true, the `machineID` will be added to each log entry. */
   enableMachineIDDecoration?: boolean;
+  /** Entitlement prefixes to omit from execution telemetry. */
+  entitlementsPrefixFilter?: string[];
+  /** Team IDs whose entitlements should be omitted from execution telemetry. */
+  entitlementsTeamIDFilter?: string[];
+  /** CEL expressions used for filtering/redacting telemetry rows before upload. */
+  telemetryFilterExpressions?: string[];
 
   // Removable Media
   /** If true, blocking Removable Media (e.g. USB Mass storage) is enabled. */
@@ -371,6 +467,8 @@ export interface SantaConfig {
   metricURL?: string;
   /** Number of seconds to wait between exporting metrics. */
   metricExportInterval?: number;
+  /** Number of seconds to wait before metric export times out. */
+  metricExportTimeout?: number;
   /** Key-value pairs to add to all metric root labels. */
   metricExtraLabels?: Record<string, string>;
 }

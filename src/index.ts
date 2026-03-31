@@ -12,6 +12,7 @@ export type {
   SantaGiftConfig,
   StaticRule,
   SyncProxyConfig,
+  TelemetryEvent,
 } from "./types.js";
 
 import type { GenerationOptions, SantaConfig, SantaGiftConfig } from "./types.js";
