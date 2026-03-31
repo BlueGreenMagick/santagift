@@ -25,6 +25,7 @@
     "build": "tsdown",
     "format": "biome format --write",
     "format:check": "biome format",
+    "check": "tsc --noEmit",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "test": "vitest run"

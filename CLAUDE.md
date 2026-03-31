@@ -21,4 +21,5 @@ pnpm build       # Build with tsdown (outputs to dist/)
 pnpm format      # Format code with biome
 pnpm lint        # Lint with biome
 pnpm lint:fix    # Fix lints and formatting
+pnpm check       # Run type check
 ```

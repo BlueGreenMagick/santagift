@@ -39,26 +39,38 @@ pnpm add santagift
 Create a `santa.config.ts`:
 
 ```ts
-import { defineConfig } from "santagift";
+import { ClientMode, defineConfig } from "santagift";
 
 export default defineConfig(
   {
     outFile: "santa.mobileconfig",
   },
   {
-    clientMode: "lockdown",
-    enableSilentMode: false,
-    unknownBlockMessage: "This software is not allowed on this machine.",
-    staticRules: [
+    ClientMode: ClientMode.Lockdown,
+    EnableSilentMode: false,
+    UnknownBlockMessage: "This software is not allowed on this machine.",
+    StaticRules: [
       {
-        ruleType: "TEAMID",
-        policy: "ALLOWLIST",
-        identifier: "EQHXZ8M8AV",
-        comment: "Allow Apple software",
+        RuleType: "TEAMID",
+        Policy: "ALLOWLIST",
+        Identifier: "EQHXZ8M8AV",
+        Comment: "Allow Apple software",
       },
     ],
   },
 );
+```
+
+For plist `<data>` values such as `ServerAuthRootsData`, use `PlistData`:
+
+```ts
+import { PlistData } from "santagift";
+
+const certs = PlistData.fromBytes(
+  new TextEncoder().encode("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"),
+);
+
+const sameCerts = PlistData.fromBase64("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCg==");
 ```
 
 Generate the config:
@@ -83,7 +95,7 @@ pnpm santaconfig --config path/to/other.config.ts   # use a custom config file
 The primary helper for defining a typed Santa configuration.
 
 - **`generationOptions`** — santagift tool-specific options, e.g. the output file path.
-- **`santaConfig`** — the Santa configuration payload. All keys map directly to Santa's configuration keys.
+- **`santaConfig`** — the Santa configuration payload. Use the same `PascalCase` key names Santa writes into plist.
 
 For a full reference of available configuration keys and what they do, see:
 - [Santa Config Docs](https://northpole.dev/configuration/keys/)
@@ -108,4 +120,5 @@ pnpm install   # install dependencies
 pnpm build     # build to dist/
 pnpm lint      # lint with biome
 pnpm lint:fix  # fix lints and formatting
+pnpm check     # Run type check
 ```
