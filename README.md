@@ -2,6 +2,12 @@
 
 A TypeScript config generator for [Santa](https://github.com/northpolesec/santa), Google's binary authorization system for macOS. Write your Santa configuration in TypeScript and generate a `.mobileconfig` plist ready for use.
 
+Features:
+- Automatically generate `.mobileconfig` plist file from typescript
+- Typescript type hints
+- Common File-Access configuration presets (todo)
+- Test that File-Access configuration has been applied correctly (todo)
+
 ## Installing Santa
 
 ```sh
@@ -20,15 +26,7 @@ Verify the installation:
 sudo santactl doctor
 ```
 
-## Installation
-
-```bash
-npm install santagift
-# or
-pnpm add santagift
-```
-
-## Usage
+## Santagift Usage
 
 ```bash
 mkdir my-santa-config && cd my-santa-config
@@ -61,17 +59,6 @@ export default defineConfig(
 );
 ```
 
-For plist `<data>` values such as `ServerAuthRootsData`, use `PlistData`:
-
-```ts
-import { PlistData } from "santagift";
-
-const certs = PlistData.fromBytes(
-  new TextEncoder().encode("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"),
-);
-
-const sameCerts = PlistData.fromBase64("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCg==");
-```
 
 Generate the config:
 
@@ -100,6 +87,22 @@ The primary helper for defining a typed Santa configuration.
 For a full reference of available configuration keys and what they do, see:
 - [Santa Config Docs](https://northpole.dev/configuration/keys/)
 - [Santa Config File-Access Authorization Docs](https://northpole.dev/configuration/faa/)
+
+### Other Data Types
+
+For plist `<data>` values such as `ServerAuthRootsData`, use `PlistData`:
+
+```ts
+import { PlistData } from "santagift";
+
+const certs = PlistData.fromBytes(
+  new TextEncoder().encode("-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"),
+);
+
+const sameCerts = PlistData.fromBase64("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCg==");
+```
+
+There is also `PlistReal` for non-integers that writes `<real>` in plist.
 
 ## Logs
 
