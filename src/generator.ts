@@ -92,25 +92,36 @@ export function generatePlist(config: SantaGiftConfig): string {
   const { santaConfig } = config;
 
   return plistDocument((root) => {
-    root.keyArray("PayloadContent", (arr) => {
+    root.key("PayloadContent").array((arr) => {
       arr.dict((santa) => {
         writeConfig(santa, santaConfig as PlistObject);
 
         santa
-          .keyString("PayloadDisplayName", "Santa")
-          .keyString("PayloadType", "com.northpolesec.santa")
-          .keyInteger("PayloadVersion", 1)
-          .keyString("PayloadUUID", santaUuid)
-          .keyString("PayloadIdentifier", `com.northpolesec.santa.${santaUuid}`);
+          .key("PayloadDisplayName")
+          .string("Santa")
+          .key("PayloadType")
+          .string("com.northpolesec.santa")
+          .key("PayloadVersion")
+          .integer(1)
+          .key("PayloadUUID")
+          .string(santaUuid)
+          .key("PayloadIdentifier")
+          .string(`com.northpolesec.santa.${santaUuid}`);
       });
     });
 
     root
-      .keyString("PayloadDisplayName", "Santa Configuration")
-      .keyBool("PayloadEnabled", true)
-      .keyString("PayloadType", "Configuration")
-      .keyString("PayloadScope", "System")
-      .keyString("PayloadUUID", outerUuid)
-      .keyString("PayloadIdentifier", "com.northpolesec.santa");
+      .key("PayloadDisplayName")
+      .string("Santa Configuration")
+      .key("PayloadEnabled")
+      .bool(true)
+      .key("PayloadType")
+      .string("Configuration")
+      .key("PayloadScope")
+      .string("System")
+      .key("PayloadUUID")
+      .string(outerUuid)
+      .key("PayloadIdentifier")
+      .string("com.northpolesec.santa");
   });
 }

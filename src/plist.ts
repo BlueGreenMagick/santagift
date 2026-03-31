@@ -204,71 +204,9 @@ export class PlistWriter {
     return this;
   }
 
-  keyString(key: string, value: string): this {
-    return this.key(key).string(value);
-  }
-
-  keyInteger(key: string, value: number): this {
-    return this.key(key).integer(value);
-  }
-
-  keyReal(key: string, value: number): this {
-    return this.key(key).real(value);
-  }
-
-  keyBool(key: string, value: boolean): this {
-    return this.key(key).bool(value);
-  }
-
-  keyDate(key: string, value: Date): this {
-    return this.key(key).date(value);
-  }
-
-  keyDict(key: string, fn: (w: PlistWriter) => void): this {
-    return this.key(key).dict(fn);
-  }
-
-  keyArray(key: string, fn: (w: PlistWriter) => void): this {
-    return this.key(key).array(fn);
-  }
-
-  optKeyString(key: string, value: string | undefined): this {
-    if (value !== undefined) this.keyString(key, value);
-    return this;
-  }
-
-  optKeyBool(key: string, value: boolean | undefined): this {
-    if (value !== undefined) this.keyBool(key, value);
-    return this;
-  }
-
-  optKeyInteger(key: string, value: number | undefined): this {
-    if (value !== undefined) this.keyInteger(key, value);
-    return this;
-  }
-
-  optKeyReal(key: string, value: number | undefined): this {
-    if (value !== undefined) this.keyReal(key, value);
-    return this;
-  }
-
-  optKeyDate(key: string, value: Date | undefined): this {
-    if (value !== undefined) this.keyDate(key, value);
-    return this;
-  }
-
   data(value: string): this {
     this.advanceValueCursor();
     this.w(`<data>${value}</data>`);
-    return this;
-  }
-
-  keyData(key: string, value: string): this {
-    return this.key(key).data(value);
-  }
-
-  optKeyData(key: string, value: string | undefined): this {
-    if (value !== undefined) this.keyData(key, value);
     return this;
   }
 
