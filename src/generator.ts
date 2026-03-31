@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FileAccessPolicyEntry, SantaGiftConfig } from "./index.js";
-import { PlistWriter, plistDocument } from "./plist.js";
+import { type PlistWriter, plistDocument } from "./plist.js";
 
 const CLIENT_MODE_MAP = { monitor: 1, lockdown: 2, standalone: 3 } as const;
 
@@ -26,8 +26,9 @@ function writePolicyEntry(w: PlistWriter, entry: FileAccessPolicyEntry): void {
   });
 
   if (entry.processes && entry.processes.length > 0) {
+    const processes = entry.processes;
     w.keyArray("Processes", (arr) => {
-      for (const proc of entry.processes!) {
+      for (const proc of processes) {
         arr.dict((d) => {
           d.optKeyString("SigningID", proc.signingId)
             .optKeyString("TeamID", proc.teamId)
@@ -94,8 +95,9 @@ export function generatePlist(config: SantaGiftConfig): string {
           .optKeyString("MachineOwner", santaConfig.machineOwner);
 
         if (santaConfig.machineOwnerGroups && santaConfig.machineOwnerGroups.length > 0) {
+          const machineOwnerGroups = santaConfig.machineOwnerGroups;
           santa.keyArray("MachineOwnerGroups", (arr) => {
-            for (const g of santaConfig.machineOwnerGroups!) arr.string(g);
+            for (const g of machineOwnerGroups) arr.string(g);
           });
         }
 
@@ -122,8 +124,9 @@ export function generatePlist(config: SantaGiftConfig): string {
               .optKeyString("EventDetailText", fap.eventDetailText);
 
             if (fap.watchItems && Object.keys(fap.watchItems).length > 0) {
+              const watchItemsData = fap.watchItems;
               policy.keyDict("WatchItems", (watchItems) => {
-                for (const [k, v] of Object.entries(fap.watchItems!)) {
+                for (const [k, v] of Object.entries(watchItemsData)) {
                   watchItems.keyDict(k, (entry) => writePolicyEntry(entry, v));
                 }
               });
@@ -144,8 +147,9 @@ export function generatePlist(config: SantaGiftConfig): string {
           .optKeyBool("EnablePageZeroProtection", santaConfig.enablePageZeroProtection);
 
         if (santaConfig.staticRules && santaConfig.staticRules.length > 0) {
+          const staticRules = santaConfig.staticRules;
           santa.keyArray("StaticRules", (arr) => {
-            for (const rule of santaConfig.staticRules!) {
+            for (const rule of staticRules) {
               arr.dict((d) => {
                 d.keyString("RuleType", rule.ruleType)
                   .keyString("Policy", rule.policy)
@@ -164,8 +168,9 @@ export function generatePlist(config: SantaGiftConfig): string {
           .optKeyString("EventLogPath", santaConfig.eventLogPath);
 
         if (santaConfig.telemetry && santaConfig.telemetry.length > 0) {
+          const telemetry = santaConfig.telemetry;
           santa.keyArray("Telemetry", (arr) => {
-            for (const t of santaConfig.telemetry!) arr.string(t);
+            for (const t of telemetry) arr.string(t);
           });
         }
 
@@ -177,8 +182,9 @@ export function generatePlist(config: SantaGiftConfig): string {
         santa.optKeyBool("BlockUSBMount", santaConfig.blockUSBMount);
 
         if (santaConfig.remountUSBMode && santaConfig.remountUSBMode.length > 0) {
+          const remountUSBMode = santaConfig.remountUSBMode;
           santa.keyArray("RemountUSBMode", (arr) => {
-            for (const m of santaConfig.remountUSBMode!) arr.string(m);
+            for (const m of remountUSBMode) arr.string(m);
           });
         }
 
@@ -194,8 +200,9 @@ export function generatePlist(config: SantaGiftConfig): string {
           santaConfig.metricExtraLabels &&
           Object.keys(santaConfig.metricExtraLabels).length > 0
         ) {
+          const metricExtraLabels = santaConfig.metricExtraLabels;
           santa.keyDict("MetricExtraLabels", (d) => {
-            for (const [k, v] of Object.entries(santaConfig.metricExtraLabels!)) {
+            for (const [k, v] of Object.entries(metricExtraLabels)) {
               d.keyString(k, v);
             }
           });

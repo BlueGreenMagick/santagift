@@ -11,18 +11,9 @@ export type RemountUSBMode =
   | "nodev"
   | "async";
 
-export type RuleType =
-  | "BINARY"
-  | "CERTIFICATE"
-  | "TEAMID"
-  | "SIGNINGID"
-  | "CDHASH";
+export type RuleType = "BINARY" | "CERTIFICATE" | "TEAMID" | "SIGNINGID" | "CDHASH";
 
-export type RulePolicy =
-  | "ALLOWLIST"
-  | "BLOCKLIST"
-  | "ALLOWLIST_COMPILER"
-  | "SILENT_BLOCKLIST";
+export type RulePolicy = "ALLOWLIST" | "BLOCKLIST" | "ALLOWLIST_COMPILER" | "SILENT_BLOCKLIST";
 
 export interface StaticRule {
   ruleType: RuleType;

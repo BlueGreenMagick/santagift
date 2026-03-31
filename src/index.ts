@@ -1,17 +1,17 @@
 export type {
-  GenerationOptions,
-  RemountUSBMode,
-  RuleType,
-  RulePolicy,
-  StaticRule,
-  SyncProxyConfig,
   FileAccessPathEntry,
-  ProcessEntry,
-  FileAccessPolicyOptions,
-  FileAccessPolicyEntry,
   FileAccessPolicy,
+  FileAccessPolicyEntry,
+  FileAccessPolicyOptions,
+  GenerationOptions,
+  ProcessEntry,
+  RemountUSBMode,
+  RulePolicy,
+  RuleType,
   SantaConfig,
   SantaGiftConfig,
+  StaticRule,
+  SyncProxyConfig,
 } from "./types.js";
 
 import type { GenerationOptions, SantaConfig, SantaGiftConfig } from "./types.js";
