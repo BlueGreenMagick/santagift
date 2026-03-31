@@ -26,7 +26,8 @@
     "format": "biome format --write",
     "format:check": "biome format",
     "lint": "biome check",
-    "lint:fix": "biome check --write"
+    "lint:fix": "biome check --write",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +37,8 @@
     "@biomejs/biome": "^2.4.9",
     "@types/node": "^25.5.0",
     "tsdown": "^0.21.7",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "jiti": "^2.6.1"

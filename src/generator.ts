@@ -43,8 +43,8 @@ function writePolicyEntry(w: PlistWriter, entry: FileAccessPolicyEntry): void {
 }
 
 export function generatePlist(config: SantaGiftConfig): string {
-  const outerUuid = randomUUID();
-  const santaUuid = randomUUID();
+  const outerUuid = process.env.TEST_SANTAGIFT_UUID ?? randomUUID();
+  const santaUuid = process.env.TEST_SANTAGIFT_UUID ?? randomUUID();
   const { santaConfig } = config;
 
   return plistDocument((root) => {
@@ -219,7 +219,7 @@ export function generatePlist(config: SantaGiftConfig): string {
     });
 
     root
-      .keyString("PayloadDisplayName", "Santa")
+      .keyString("PayloadDisplayName", "Santa Configuration")
       .keyBool("PayloadEnabled", true)
       .keyString("PayloadType", "Configuration")
       .keyString("PayloadScope", "System")
