@@ -56,9 +56,18 @@ export type TelemetryEvent =
   | "XProtect"
   | "None";
 
-export type RuleType = "BINARY" | "CERTIFICATE" | "TEAMID" | "SIGNINGID" | "CDHASH";
+export type RuleType =
+  | "BINARY"
+  | "CERTIFICATE"
+  | "TEAMID"
+  | "SIGNINGID"
+  | "CDHASH";
 
-export type RulePolicy = "ALLOWLIST" | "BLOCKLIST" | "ALLOWLIST_COMPILER" | "SILENT_BLOCKLIST";
+export type RulePolicy =
+  | "ALLOWLIST"
+  | "BLOCKLIST"
+  | "ALLOWLIST_COMPILER"
+  | "SILENT_BLOCKLIST";
 
 export enum ClientMode {
   Monitor = 1,
@@ -94,6 +103,15 @@ export interface FileAccessPathEntry {
   /**
    * The path pattern to monitor.
    *
+   * When multiple path globs or prefixes match an operation, the rule with the "most specific" or longest match is applied.
+   *
+   * Glob pattern support is provided by the libc `glob(3) function.
+   * Extended glob patterns, such as globstar (`**`), are not supported.
+   *
+   * Path globs represent a point-in-time snapshot.
+   * Globs are expanded when a configuration is applied and periodically re-evaluated
+   * based on the `FileAccessPolicyUpdateIntervalSec` setting.
+   *
    * Examples:
    * - Exact path: `/etc/sudoers`
    * - Wildcard: `/Users/*\/Documents/*`
@@ -106,7 +124,11 @@ export interface FileAccessPathEntry {
   IsPrefix?: boolean;
 }
 
-/** A process matcher for FAA rules. */
+/**
+ * A process matcher for FAA rules.
+ *
+ * You can retrieve most of the info using `santactl fileinfo <path to executable>`
+ */
 export interface ProcessEntry {
   /** Signing ID, e.g. `EQHXZ8M8AV:com.google.Chrome.helper`. */
   SigningID?: string;
