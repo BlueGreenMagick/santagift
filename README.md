@@ -125,3 +125,8 @@ pnpm lint      # lint with biome
 pnpm lint:fix  # fix lints and formatting
 pnpm check     # Run type check
 ```
+
+
+## Credits
+This project incorporates code and documentation from Santa (https://github.com/northpolesec/santa),
+used under the Apache License, Version 2.0.
