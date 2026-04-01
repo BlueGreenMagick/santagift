@@ -10,7 +10,16 @@ src/
   generator.ts  # Plist generation logic
   plist.ts      # Plist serialization utilities
   cli.ts        # CLI entrypoint (santaconfig binary)
+  presets/
+    index.ts          # Assembles and exports filePresets, fileConfigs, electronV8Heap
+    file/             # One file per FAA preset (ssh, chrome-cookies, etc.)
+      lib/
+        electron.ts   # electronV8Heap(appPath, teamId) factory
 ```
+
+The `santagift/presets` subpath exports:
+- `filePresets` — individual `Record<string, FileAccessPolicyEntry>` objects, spread into `FileAccessPolicy.WatchItems` array. 
+- `fileConfigs`: group of presets. e.g. `fileConfigs.recommended`
 
 ## Tools & Commands
 
