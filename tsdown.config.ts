@@ -14,4 +14,10 @@ export default defineConfig([
     outDir: "dist",
     banner: { js: "#!/usr/bin/env node" },
   },
+  {
+    entry: { "presets/index": "src/presets/index.ts" },
+    format: ["esm", "cjs"],
+    outDir: "dist",
+    dts: true,
+  },
 ]);

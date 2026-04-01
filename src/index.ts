@@ -1,3 +1,4 @@
+export { PlistData, PlistReal } from "./plist.js";
 export type {
   FileAccessPathEntry,
   FileAccessPolicy,
@@ -15,7 +16,6 @@ export type {
   TelemetryEvent,
 } from "./types.js";
 export { ClientMode } from "./types.js";
-export { PlistData, PlistReal } from "./plist.js";
 
 import type { GenerationOptions, SantaConfig, SantaGiftConfig } from "./types.js";
 
