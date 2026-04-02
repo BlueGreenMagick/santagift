@@ -12,7 +12,7 @@ import { passwordHashes } from "./file/password-hashes.js";
 import { spotlight } from "./file/spotlight.js";
 import { ssh } from "./file/ssh.js";
 
-export { electronApp } from "./file/lib/electron.js";
+export { electronV8Heap } from "./file/lib/electron.js";
 
 export const filePresets: {
   readonly ssh: Record<string, FileAccessPolicyEntry>;
