@@ -68,7 +68,7 @@ export default defineConfig(
 Generate the config:
 
 ```bash
-pnpm santaconfig
+pnpm santagift
 ```
 
 This writes `santa.mobileconfig` to the current directory. To apply it:
@@ -77,7 +77,7 @@ This writes `santa.mobileconfig` to the current directory. To apply it:
 2. Go to **Settings > Privacy Downloaded > Device Management** and install the profile.
 
 ```bash
-pnpm santaconfig --config path/to/other.config.ts   # use a custom config file
+pnpm santagift --config path/to/other.config.ts   # use a custom config file
 ```
 
 ## API
