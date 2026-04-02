@@ -4,7 +4,7 @@
   "description": "MacOS Santa config generator and testing tool",
   "type": "module",
   "bin": {
-    "santaconfig": "./dist/cli.mjs"
+    "santagift": "./dist/cli.mjs"
   },
   "exports": {
     ".": {
