@@ -16,8 +16,8 @@ brew install santa  # requires root password
 
 After installing:
 
-1. Go to **Settings > Login Items & Extensions** and allow Santa.app's security extension and app background activity.
-2. Go to **Settings > Privacy & Security > Full Disk Access** and allow Santa.
+1. Go to **Settings > General > Login Items & Extensions > Endpoint Security Extensions** and allow Santa.app's security extension and app background activity.
+2. Go to **Settings > Privacy & Security > Full Disk Access** and allow 'Santa Extension Security Extension'.
 
 Verify the installation:
 
