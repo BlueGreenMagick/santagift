@@ -54,6 +54,7 @@ export type TelemetryEvent =
   | "LaunchItem"
   | "TCCModification"
   | "XProtect"
+  | "ProcSuspendResume"
   | "None";
 
 export type RuleType =
@@ -120,6 +121,8 @@ export interface FileAccessPathEntry {
   /**
    * Boolean indicating whether the path represents prefix matching. When
    * `true`, the rule will match files nested inside directories.
+   *
+   * Default: `false`
    */
   IsPrefix?: boolean;
 }
@@ -164,9 +167,18 @@ export interface FileAccessPolicyOptions {
     | "PathsWithDeniedProcesses"
     | "ProcessesWithAllowedPaths"
     | "ProcessesWithDeniedPaths";
-  /** If true, reads will be permitted and only write-like access will be evaluated. */
+  /**
+   * If true, reads will be permitted and only write-like access will be
+   * evaluated.
+   *
+   * Default: `true`
+   */
   AllowReadAccess?: boolean;
-  /** If true, operations are only logged and not blocked. */
+  /**
+   * If true, operations are only logged and not blocked.
+   *
+   * Default: `true`
+   */
   AuditOnly?: boolean;
   /**
    * Rule-specific URL that overrides the top-level `EventDetailURL`.
@@ -189,13 +201,29 @@ export interface FileAccessPolicyOptions {
    * "https://sync-server-hostname/%machine_id%/%rule_name%/%rule_version%"
    */
   EventDetailURL?: string;
-  /** Button label text for the notification dialog, maximum 48 characters. Defaults to `Open`. */
+  /**
+   * Button label text for the notification dialog, maximum 48 characters.
+   *
+   * Default: `Open`
+   */
   EventDetailText?: string;
-  /** The message shown to the user when access is blocked for this rule. */
+  /**
+   * The message shown to the user when access is blocked for this rule.
+   *
+   * Default: Santa's generic blocked-action message
+   */
   BlockMessage?: string;
-  /** If true, Santa GUI notifications for this rule are suppressed. */
+  /**
+   * If true, Santa GUI notifications for this rule are suppressed.
+   *
+   * Default: `false`
+   */
   EnableSilentMode?: boolean;
-  /** If true, TTY notifications for this rule are suppressed. */
+  /**
+   * If true, TTY notifications for this rule are suppressed.
+   *
+   * Default: `false`
+   */
   EnableSilentTTYMode?: boolean;
 }
 
@@ -234,7 +262,11 @@ export interface FileAccessPolicy {
    * "https://sync-server-hostname/%machine_id%/%rule_name%/%rule_version%"
    */
   EventDetailURL?: string;
-  /** Button label text for the notification dialog, maximum 48 characters. Defaults to `Open`. */
+  /**
+   * Button label text for the notification dialog, maximum 48 characters.
+   *
+   * Default: `Open`
+   */
   EventDetailText?: string;
   /** Dictionary containing the individual monitoring rules. */
   WatchItems?: Record<string, FileAccessPolicyEntry>;
@@ -250,15 +282,35 @@ export interface SantaConfig {
    * - `ClientMode.Monitor` => `1` (Monitor): Executions of binaries not covered by a rule will be allowed
    * - `ClientMode.Lockdown` => `2` (Lockdown): Executions of binaries not covered by a rule will be blocked
    * - `ClientMode.Standalone` => `3` (Standalone): Executions of binaries not covered by a rule will trigger an authorization dialog
+   *
+   * Default: `ClientMode.Monitor`
    */
   ClientMode?: ClientMode;
-  /** If true, Santa will fail closed if it cannot establish a database connection. */
+  /**
+   * If true, Santa will fail closed if it cannot establish a database
+   * connection.
+   *
+   * Default: `false`
+   */
   FailClosed?: boolean;
-  /** If true, standalone mode can fall back to a password prompt when sync is unavailable. */
+  /**
+   * If true, standalone mode can fall back to a password prompt when sync is
+   * unavailable.
+   *
+   * Default: `true`
+   */
   EnableStandalonePasswordFallback?: boolean;
-  /** If true, Santa will ignore the presence of other Endpoint Security clients. */
+  /**
+   * If true, Santa will ignore the presence of other Endpoint Security clients.
+   *
+   * Default: `false`
+   */
   IgnoreOtherEndpointSecurityClients?: boolean;
-  /** If true, Santa will collect anonymous stats. */
+  /**
+   * If true, Santa will collect anonymous stats.
+   *
+   * Default: `false`
+   */
   EnableStatsCollection?: boolean;
   /** Organization ID associated with stats collection. */
   StatsOrganizationID?: string;
@@ -266,11 +318,20 @@ export interface SantaConfig {
   // Sync
   /** Base URL used for syncing with the Santa server. */
   SyncBaseURL?: string;
-  /** If true, use protobuf for sync transfer when supported. */
+  /**
+   * If true, use protobuf for sync transfer when supported.
+   *
+   * Default: `false`
+   */
   SyncEnableProtoTransfer?: boolean;
   /** Proxy settings used for sync communication. */
   SyncProxyConfiguration?: SyncProxyConfig;
-  /** If true, events will be uploaded to the sync server even if a clean sync is requested. */
+  /**
+   * If true, events will be uploaded to the sync server even if a clean sync is
+   * requested.
+   *
+   * Default: `false`
+   */
   SyncEnableCleanSyncEventUpload?: boolean;
   /** Client certificate file used for mutual TLS authentication. */
   ClientAuthCertificateFile?: string;
@@ -284,25 +345,70 @@ export interface SantaConfig {
   ServerAuthRootsFile?: string;
   /** PEM-encoded root certificates used to authenticate the server, wrapped as plist data. */
   ServerAuthRootsData?: PlistData;
-  /** Machine identifier to include in sync requests and logs. */
+  /**
+   * Machine identifier to include in sync requests and logs.
+   *
+   * Default: hardware UUID
+   */
   MachineID?: string;
   /** Machine owner value to send to the sync server. */
   MachineOwner?: string;
   /** Path to a plist containing the machine owner. */
   MachineOwnerPlist?: string;
+  /** Key to read from `MachineOwnerPlist`. */
+  MachineOwnerKey?: string;
   /** Machine owner groups to send to the sync server. */
   MachineOwnerGroups?: string[];
-  /** If true, upload all events rather than only the usual subset. */
+  /** Key to read machine owner groups from `MachineOwnerPlist`. */
+  MachineOwnerGroupsKey?: string;
+  /** Path to a plist containing the machine ID. */
+  MachineIDPlist?: string;
+  /** Key to read from `MachineIDPlist`. */
+  MachineIDKey?: string;
+  /**
+   * If true, upload all events rather than only the usual subset.
+   *
+   * Default: `false`
+   */
   EnableAllEventUpload?: boolean;
-  /** If true, unknown events will not be uploaded to the sync server. */
+  /**
+   * If true, unknown events will not be uploaded to the sync server.
+   *
+   * Default: `false`
+   */
   DisableUnknownEventUpload?: boolean;
+  /**
+   * Content-Encoding header used for requests sent to the sync service.
+   *
+   * Allowed values:
+   * - `deflate`
+   * - `gzip`
+   * - `none`
+   *
+   * Default: `deflate`
+   */
+  SyncClientContentEncoding?: "deflate" | "gzip" | "none";
+  /** Additional headers to include in all requests made to the sync server. */
+  SyncExtraHeaders?: Record<string, string>;
 
   // GUI
-  /** If true, GUI notifications are suppressed. */
+  /**
+   * If true, GUI notifications are suppressed.
+   *
+   * Default: `false`
+   */
   EnableSilentMode?: boolean;
-  /** If true, TTY notifications are suppressed. */
+  /**
+   * If true, TTY notifications are suppressed.
+   *
+   * Default: `false`
+   */
   EnableSilentTTYMode?: boolean;
-  /** If true, the Santa menu item is shown. */
+  /**
+   * If true, the Santa menu item is shown.
+   *
+   * Default: `true`
+   */
   EnableMenuItem?: boolean;
   /** Text shown in the About window. */
   AboutText?: string;
@@ -316,15 +422,27 @@ export interface SantaConfig {
   FileAccessEventDetailURL?: string;
   /** Button text associated with `FileAccessEventDetailURL`. */
   FileAccessEventDetailText?: string;
-  /** Text shown on the dismiss button in the block dialog. */
+  /**
+   * Text shown on the dismiss button in the block dialog.
+   *
+   * Default: `Dismiss`
+   */
   DismissText?: string;
   /** Message shown when an unknown binary is blocked. */
   UnknownBlockMessage?: string;
   /** Message shown when a binary is blocked by a rule without a custom message. */
   BannedBlockMessage?: string;
-  /** Notification text displayed when entering monitor mode. */
+  /**
+   * Notification text displayed when entering monitor mode.
+   *
+   * Default: `Switching into Monitor mode`
+   */
   ModeNotificationMonitor?: string;
-  /** Notification text displayed when entering lockdown mode. */
+  /**
+   * Notification text displayed when entering lockdown mode.
+   *
+   * Default: `Switching into Lockdown mode`
+   */
   ModeNotificationLockdown?: string;
   /** Message displayed when a USB device is prevented from being mounted. */
   BannedUSBBlockMessage?: string;
@@ -332,7 +450,12 @@ export interface SantaConfig {
   RemountUSBBlockMessage?: string;
   /** Default message shown when a file-access rule blocks access. */
   FileAccessBlockMessage?: string;
-  /** If false, users will not be presented with an option to silence notifications. */
+  /**
+   * If false, users will not be presented with an option to silence
+   * notifications.
+   *
+   * Default: `true`
+   */
   EnableNotificationSilences?: boolean;
   /** Company name to display on Santa GUIs and in TTY messages. */
   BrandingCompanyName?: string;
@@ -354,7 +477,11 @@ export interface SantaConfig {
    * - `data:`
    */
   BrandingCompanyLogoDark?: string;
-  /** If true, the Santa UI will use special images/fonts on certain holidays. */
+  /**
+   * If true, the Santa UI will use special images/fonts on certain holidays.
+   *
+   * Default: `false`
+   */
   FunFontsOnSpecificDays?: boolean;
 
   // File-Access Authorization
@@ -362,7 +489,11 @@ export interface SantaConfig {
   FileAccessPolicy?: FileAccessPolicy;
   /** Path to a file access configuration plist. Ignored if `FileAccessPolicy` is also set. */
   FileAccessPolicyPlist?: string;
-  /** Seconds between re-reading the file access policy config. */
+  /**
+   * Seconds between re-reading the file access policy config.
+   *
+   * Default: `600` (10 minutes)
+   */
   FileAccessPolicyUpdateIntervalSec?: number;
   /**
    * Defines a global override policy that applies to the enforcement of all
@@ -373,12 +504,20 @@ export interface SantaConfig {
    * - `DISABLE`: no access will be blocked or logged
    * - `none`: enforce policy as defined in each rule
    *
-   * Omitting this property has the same effect as `none`.
+   * Default: `none`
    */
   OverrideFileAccessAction?: "AUDIT_ONLY" | "DISABLE" | "none";
-  /** Average logs per second emitted by FAA rule violations. */
+  /**
+   * Average logs per second emitted by FAA rule violations.
+   *
+   * Default: `60`
+   */
   FileAccessGlobalLogsPerSec?: number;
-  /** Window size over which FAA log rate limiting is applied. */
+  /**
+   * Window size over which FAA log rate limiting is applied.
+   *
+   * Default: `15`
+   */
   FileAccessGlobalWindowSizeSec?: number;
 
   // Rules
@@ -386,11 +525,26 @@ export interface SantaConfig {
   AllowedPathRegex?: string;
   /** A regex to block if the binary, certificate, or Team ID scopes did not allow or block execution. */
   BlockedPathRegex?: string;
-  /** If true, binaries with a bad signing chain will be blocked even in monitor mode unless explicitly allowed. */
+  /**
+   * If true, binaries with a bad signing chain will be blocked even in monitor
+   * mode unless explicitly allowed.
+   *
+   * Default: `false`
+   */
   EnableBadSignatureProtection?: boolean;
-  /** If true, 32-bit binaries missing the `__PAGEZERO` segment will be blocked even in monitor mode unless explicitly allowed. */
+  /**
+   * If true, 32-bit binaries missing the `__PAGEZERO` segment will be blocked
+   * even in monitor mode unless explicitly allowed.
+   *
+   * Default: `true`
+   */
   EnablePageZeroProtection?: boolean;
-  /** If true, Santa will respect compiler rules and create allow rules for produced executables. */
+  /**
+   * If true, Santa will respect compiler rules and create allow rules for
+   * produced executables.
+   *
+   * Default: `false`
+   */
   EnableTransitiveRules?: boolean;
   /** A static set of rules to always apply to the host. */
   StaticRules?: StaticRule[];
@@ -405,9 +559,15 @@ export interface SantaConfig {
    * - `protobuf`: (BETA) Sent to file on disk using a maildir-like format
    * - `json`: (BETA) Same as file but output is one JSON object per line
    * - `null`: Don't output any event logs
+   *
+   * Default: `file`
    */
   EventLogType?: "syslog" | "file" | "protobuf" | "json" | "null";
-  /** Path used to save logs when `EventLogType` is `file` or `json`. */
+  /**
+   * Path used to save logs when `EventLogType` is `file` or `json`.
+   *
+   * Default: `/var/db/santa/santa.log`
+   */
   EventLogPath?: string;
   /**
    * Array of strings for events that should be logged.
@@ -438,22 +598,45 @@ export interface SantaConfig {
    * - `LaunchItem`
    * - `TCCModification`
    * - `XProtect`
+   * - `ProcSuspendResume`
    * - `None`
+   *
+   * Default: `["Everything"]`
    */
   Telemetry?: TelemetryEvent[];
   /** The regex of paths to log file changes. */
   FileChangesRegex?: string;
   /** Array of path prefixes that should be excluded from file-change logging. */
   FileChangesPrefixFilters?: string[];
-  /** Base directory used to save protobuf spool files. */
+  /**
+   * Base directory used to save protobuf spool files.
+   *
+   * Default: `/var/db/santa/spool`
+   */
   SpoolDirectory?: string;
-  /** Per-file size limit in KB for files stored in the protobuf spool directory. */
+  /**
+   * Per-file size limit in KB for files stored in the protobuf spool directory.
+   *
+   * Default: `250`
+   */
   SpoolDirectoryFileSizeThresholdKB?: number;
-  /** Total combined size limit in MB of all protobuf spool directory files. */
+  /**
+   * Total combined size limit in MB of all protobuf spool directory files.
+   *
+   * Default: `100`
+   */
   SpoolDirectorySizeThresholdMB?: number;
-  /** Max seconds to buffer protobuf events before flushing to disk. */
+  /**
+   * Max seconds to buffer protobuf events before flushing to disk.
+   *
+   * Default: `15`
+   */
   SpoolDirectoryEventMaxFlushTimeSec?: number;
-  /** If true, the `MachineID` will be added to each log entry. */
+  /**
+   * If true, the `MachineID` will be added to each log entry.
+   *
+   * Default: `false`
+   */
   EnableMachineIDDecoration?: boolean;
   /** Entitlement prefixes to omit from execution telemetry. */
   EntitlementsPrefixFilter?: string[];
@@ -463,7 +646,11 @@ export interface SantaConfig {
   TelemetryFilterExpressions?: string[];
 
   // Removable Media
-  /** If true, blocking Removable Media (e.g. USB Mass storage) is enabled. */
+  /**
+   * If true, blocking Removable Media (e.g. USB Mass storage) is enabled.
+   *
+   * Default: `false`
+   */
   BlockUSBMount?: boolean;
   /**
    * Array of strings for arguments to pass to `mount -o` when forcibly
@@ -496,9 +683,17 @@ export interface SantaConfig {
   MetricFormat?: "rawjson" | "monarchjson";
   /** URL describing where monitoring metrics should be exported. */
   MetricURL?: string;
-  /** Number of seconds to wait between exporting metrics. */
+  /**
+   * Number of seconds to wait between exporting metrics.
+   *
+   * Default: `30`
+   */
   MetricExportInterval?: number;
-  /** Number of seconds to wait before metric export times out. */
+  /**
+   * Number of seconds to wait before metric export times out.
+   *
+   * Default: `30`
+   */
   MetricExportTimeout?: number;
   /** Key-value pairs to add to all metric root labels. */
   MetricExtraLabels?: Record<string, string>;
