@@ -8,6 +8,11 @@ Features:
 - Common File-Access configuration presets (todo)
 - Test that File-Access configuration has been applied correctly (todo)
 
+## Presets
+santagift ships with pre-configured presets for File Access Authorization policies.
+
+The presets are designed to help detect and prevent exfilteration of sensitive data. It assumes that the malicious software is already running on the machine and aims to protect sensitive files such as SSH keys and browser / electron cookies. The presets are provided for common apps.
+
 ## Installing Santa
 
 ```sh
