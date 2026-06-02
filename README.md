@@ -1,6 +1,6 @@
 # santagift
 
-**DEPRECATED** in favor of [clearance-kitty](github.com/BlueGreenMagick/clearance-kitty)
+**DEPRECATED** in favor of [clearance-kitty](https://github.com/BlueGreenMagick/clearance-kitty)
 
 
 A TypeScript config generator for [Santa](https://github.com/northpolesec/santa), Google's binary authorization system for macOS. Write your Santa configuration in TypeScript and generate a `.mobileconfig` plist ready for use.
